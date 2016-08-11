@@ -1,0 +1,227 @@
+<!--
+%\VignetteIndexEntry{Detecting differentially abundant subpopulations in mass cytometry data}
+%\VignettePackage{BiocStyle}
+%\VignetteEngine{knitr::knitr}
+-->
+
+```{r, echo=FALSE, results="hide", message=FALSE}
+require(knitr)
+opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+```
+
+```{r style, echo=FALSE, results='asis'}
+BiocStyle::markdown()
+```
+
+```{r setup, echo=FALSE, message=FALSE}
+library(cyder)
+register(SerialParam())
+set.seed(100)
+```
+
+# Detecting differentially abundant subpopulations in mass cytometry data
+Package: `r Rpackage("cyder")` <br />
+Author: Aaron Lun (alun@wehi.edu.au) <br />
+Compilation date: `r Sys.Date()`
+
+# Introduction
+
+Mass cytometry is a technique that allows simultaneous profiling of many (> 30) protein markers on each of millions of cells.
+This is frequently used to characterize cell subpopulations based on unique combinations of markers.
+One way to analyze this data is to identify subpopulations that change in abundance between conditions, e.g., with or without drug treatment, before and after stimulation. 
+This vignette will describe the steps necessary to perform this "differential abundance" (DA) analysis.
+
+# Setting up the data
+
+The analysis starts from a set of Flow Cytometry Standard (FCS) files containing intensities for each cell.
+These intensities should already be transformed, e.g., using the `estimateLogicle` method from the `r Biocpkg("flowCore")` package.
+Any gating to remove dead cells, debris or low-quality events should have already been performed.
+We can then use the `read.ncdfFlowSet` function in the `r Biocpkg("ncdfFlow")` package to load intensities into the R session.
+To illustrate, we will use some example data from the `r Biocpkg("flowCore")` package, though the same principles apply for mass cytometry data.
+
+```{r}
+library(ncdfFlow)
+path <- system.file("extdata", "compdata", "data", package="flowCore")
+files <- list.files(path, full=TRUE)
+ncdf <- read.ncdfFlowSet(files)
+```
+
+Note that any markers that are not biologically relevant (e.g., barcodes, dead-or-alive stains, DNA) should be removed at this point.
+
+```{r}
+irrelevant <- grepl("BC", colnames(ncdf)) | grepl("DNA", colnames(ncdf)) 
+ncdf <- ncdf[,!irrelevant]
+```
+
+For the purposes of this vignette, we will simulate some data to demonstrate the methods below.
+This experiment will assay 30 markers, and contain 3 replicate samples in each of 2 biological conditions.
+We add two small differentially abundant subpopulations to ensure that we get something to look at later. 
+
+```{r}
+ncells <- 20000
+nda <- 200
+nmarkers <- 30
+down.pos <- 1.8
+up.pos <- 1.2
+conditions <- rep(c("A", "B"), each=3)
+combined <- rbind(matrix(rnorm(ncells*nmarkers, 1.5, 0.6), ncol=nmarkers),
+                  matrix(rnorm(nda*nmarkers, down.pos, 0.3), ncol=nmarkers),
+                  matrix(rnorm(nda*nmarkers, up.pos, 0.3), ncol=nmarkers))
+sample.id <- c(sample(length(conditions), ncells, replace=TRUE), 
+               sample(which(conditions=="A"), nda, replace=TRUE), 
+               sample(which(conditions=="B"), nda, replace=TRUE))
+colnames(combined) <- paste0("Marker", seq_len(nmarkers))
+```
+
+We use this to construct a list of matrices for our downstream analysis.
+
+```{r}
+collected.exprs <- list()
+for (i in seq_along(conditions)) {
+    collected.exprs[[i]] <- combined[sample.id==i,,drop=FALSE]
+}
+names(collected.exprs) <- paste0("Sample", seq_along(conditions))
+```
+
+# Counting cells into hyperspheres
+
+We quantify abundance by assigning cells to hyperspheres in the high-dimensional marker space, and counting the number of cells from each sample in each hypersphere.
+To do this, we first convert the intensity data into a format that is more amenable for counting.
+This works with either a list of matrices, or directly with a `ncdfFlowSet` object.
+
+```{r}
+cd <- prepareCellData(collected.exprs)
+```
+
+We then assign cells to hyperspheres.
+Each hypersphere is centred at a cell, in order to restrict ourselves to non-empty hyperspheres, and has radius equal to 0.5 times the square root of the number of markers.
+The square root function adjusts for increased sparsity of the data at higher dimensions, while the 0.5 scaling factor allows cells with 10-fold differences in marker intensity (due to biological variability or technical noise) to be counted into the same hypersphere.
+The reported count matrix contains the set of counts for each hypersphere (row) from each sample (column).
+
+```{r}
+out <- countCells(cd, tol=0.5)
+head(out$counts)
+```
+
+Also reported are the "positions" of the hyperspheres, defined for each marker as the median intensity for all cells assigned to each hypersphere.
+This will be required later for interpretation, as the marker intensities are required for defining the function of each subpopulation.
+Shown below is the position of the first hypersphere, represented by its set of median intensities across all markers.
+
+```{r}
+out$coordinates[1,]
+```
+
+Note that the name of each row in `out$counts` and `out$coordinates` indicates the cell in `cd` on which the hypersphere is centred.
+These should not be changed in the downstream analysis.
+There is also some light filtering in `countCells` to improve memory efficiency, which can be adjusted with the `filter` argument.
+
+# Testing for significant differences in abundance
+
+We can use a number of methods to test the count data for differential abundance.
+Here, we will use the quasi-likelihood (QL) method from the `r Biocpkg("edgeR")` package.
+This allows us to model discrete count data with overdispersion due to biological variability.
+
+```{r}
+library(edgeR)
+y <- DGEList(out$counts, lib.size=out$totals, genes=out$coordinates)
+```
+
+First, we do some filtering to remove low-abundance hyperspheres with average counts below 5.
+These are mostly uninteresting as they do not provide enough evidence to reject the null hypothesis.
+Removing them also reduces computational work and the severity of the multiple testing correction.
+
+```{r}
+keep <- aveLogCPM(y) >= aveLogCPM(5, mean(out$totals))
+y <- y[keep,]
+```
+
+We then apply the QL framework to estimate the dispersions, fit a generalized linear model and test for significant differences between conditions.
+We refer interested readers to the `r Biocpkg("edgeR")` user's guide for more details.
+
+```{r}
+design <- model.matrix(~factor(conditions))
+y <- estimateDisp(y, design)
+fit <- glmQLFit(y, design, robust=TRUE)
+res <- glmQLFTest(fit, coef=2)
+```
+
+Note that normalization by total cell count per sample is implicitly performed by setting `lib.size=out$totals`.
+We do not recommend using `calcNormFactors` in this context, as its assumptions may not be applicable to mass cytometry data.
+
+# Controlling the spatial FDR
+
+To correct for multiple testing, we aim to control the spatial false discovery rate (FDR).
+This refers to the FDR across areas of the high-dimensional space.
+We do this using the `spatialFDR` function, given the p-values and positions of all tested hyperspheres.
+
+```{r}
+qvals <- spatialFDR(y$genes, res$table$PValue)
+```
+
+Hyperspheres with significant differences in abundance are defined as those detected at a spatial FDR of, say, 5%.
+
+```{r}
+is.sig <- qvals <= 0.05
+summary(is.sig)
+```
+
+This approach is a bit more sophisticated than simply applying the BH method to the hypersphere p-values.
+Such a simple approach would fail to account for the different densities of hyperspheres in different parts of the high-dimensional space.
+
+# Visualizing and interpreting the results
+
+To interpret the DA hyperspheres, we use dimensionality reduction to visualize them in a convenient two-dimensional representation.
+This is done here with PCA, though for more complex data sets, we suggest using something like `r CRANpkg("Rtsne")`.
+
+```{r}
+res.diff <- res[is.sig,]
+coords <- prcomp(res.diff$genes)
+```
+
+Each DA hypersphere is represented as a point on the plot below, coloured according to its log-fold change between conditions.
+We can see that we've recovered the two DA subpopulations that we put in at the start.
+One subpopulation increases in abundance (red) while the other decreases (blue) in the second condition relative to the first.
+
+```{r}
+plotCellLogFC(coords$x[,1], coords$x[,2], res.diff$table$logFC)
+```
+
+This plot should be interpreted by examining the marker intensities, in order to determine what each area of the plot represents. 
+We suggest using the `plotCellIntensity` function to make a series of plots for all markers, as shown below.
+Colours represent to the median marker intensities of each hypersphere, mapped onto the `r CRANpkg("viridis")` colour scale.
+
+```{r,fig.width=10,fig.height=12}
+par(mfrow=c(6,5), mar=c(2.1, 1.1, 3.1, 1.1))
+limits <- intensityRanges(cd, p=0.05)
+for (i in order(colnames(y$genes))) {
+    plotCellIntensity(coords$x[,1], coords$x[,2], res.diff$genes[,i],
+                      irange=limits[,i], main=colnames(res.diff$genes)[i])
+}
+```
+
+We use the `intensityRanges` function to define the bounds of the colour scale. 
+This caps the minimum and maximum intensities at the 5^th^ and 95^th^ percentiles, respectively, to avoid colours being skewed by outliers.
+
+Note that both of these functions return a vector of colours, named with the corresponding numeric value of the log-fold change or intensity.
+This can be used to construct a colour bar -- see `?plotCellLogFC` for more details.
+
+# Additional notes
+
+Users wanting to identify specific subpopulations may consider using the `selectorPlot` function from `r Biocpkg("scran")`.
+This provides an interactive framework by which hyperspheres can be selected and saved to a R session for further examination.
+
+The best markers that distinguish cells in one subpopulation from all others can also be identified using `pickBestMarkers`.
+For example, if we take all hyperspheres on one side of the PCA plot, we can obtain a ranking for all markers.
+This is useful when combined with `selectorPlot` to identify the distinctive markers for a subpopulation of interest.
+
+```{r}
+chosen <- rownames(res.diff)[coords$x[,1] > 0]
+bestm <- pickBestMarkers(cd, chosen)
+head(bestm)
+```
+
+# Session information
+
+```{r}
+sessionInfo()
+```

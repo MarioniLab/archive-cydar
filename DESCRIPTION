@@ -1,0 +1,15 @@
+Package: cyder
+Version: 0.0.1
+Date: 2016-03-15
+Title: Identifying differential gates from barcoded CyTOF data
+Author: Aaron Lun <alun@wehi.edu.au>
+Maintainer: Aaron Lun <alun@wehi.edu.au>
+Depends: BiocParallel
+Imports: plotrix, viridis, glmnet
+Suggests: ncdfFlow 
+biocViews: FlowCytometry 
+Description: This package identifies combinations of gates that 
+    yield differentially abundant populations between samples in
+    barcoded CyTOF data.
+License: GPL-3
+NeedsCompilation: yes

@@ -1,0 +1,17 @@
+useDynLib(cyder)
+
+import(BiocParallel)
+importFrom("plotrix", color.scale)
+importFrom("viridis", viridis)
+importFrom("glmnet", glmnet)
+
+export(countCells,
+    plotCellLogFC,
+    plotCellIntensity,
+    intensityRanges,
+    spatialFDR,
+    pickBestMarkers,
+    prepareCellData,
+    neighborDistances
+)
+
