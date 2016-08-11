@@ -89,11 +89,10 @@ prepareCellData <- function(x, ...)
         }
         expr.val <- x
     } else if (is(x, "ncdfFlowSet")) { 
-        require(ncdfFlow)
-        sample.names <- sampleNames(x)
+        sample.names <- Biobase::sampleNames(x)
         marker.names <- BiocGenerics::colnames(x)
         by.sample <- seq_along(sample.names)
-        expr.val <- lapply(by.sample, FUN=function(i) exprs(x[[i]]))
+        expr.val <- lapply(by.sample, FUN=function(i) flowCore::exprs(x[[i]]))
     } else {
         stop("'cell.data' must be a list or ncdfFlowSet object") 
     }

@@ -19,7 +19,7 @@ plotCellIntensity(x, y, intensity, irange=NULL,
 \item{max.logFC}{A numeric scalar specifying the maximum absolute log-fold change.}
 \item{zero.col}{A numeric scalar between 0 and 1, specifying the greyscale intensity to represent a log-fold change of zero.}
 \item{intensity}{A numeric vector specifying the marker intensities for each feature.}
-\item{irange=NULL}{A numeric vector of length 2, specifying the upper and lower bound for the intensities.}
+\item{irange}{A numeric vector of length 2, specifying the upper and lower bound for the intensities.}
 \item{length.out}{An integer scalar specifying the resolution of the colour bar.}
 \item{pch, ...}{Additional arguments to pass to \code{plot}.}
 }

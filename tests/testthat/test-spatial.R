@@ -1,7 +1,7 @@
 #####################################################
 # Testing functions related to computing the spatial FDR.
 
-require(cyder); require(testthat)
+require(cydar); require(testthat)
 set.seed(300)
 ncells <- 1000
 nmarkers <- 10

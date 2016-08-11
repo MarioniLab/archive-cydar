@@ -1,9 +1,12 @@
-useDynLib(cyder)
+useDynLib(cydar, .registration=TRUE, .fixes="cxx_")
 
 import(BiocParallel)
 importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
+importFrom("graphics", plot)
+importFrom("methods", is)
+importFrom("stats", coef, kmeans, median, quantile)
 
 export(countCells,
     plotCellLogFC,

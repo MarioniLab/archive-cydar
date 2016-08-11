@@ -1,7 +1,5 @@
 #include "objects.h"
 
-extern "C" {
-
 SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP centers, SEXP cluster_info, SEXP curcells) try {
     finder fx(exprs, centers, cluster_info);
 
@@ -109,7 +107,5 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
     return output;
 } catch (std::exception& e) {
 return mkString(e.what());
-}
-
 }
 

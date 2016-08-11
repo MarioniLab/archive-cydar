@@ -1,4 +1,4 @@
-#include "cyder.h"
+#include "cydar.h"
 #include "utils.h"
 
 matrix_info::matrix_info (int nr, int nc, bool ii) : nrow(nr), ncol(nc), is_integer(ii), iptr(NULL), dptr(NULL) {}

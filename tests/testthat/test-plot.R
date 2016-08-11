@@ -1,7 +1,7 @@
 #####################################################
 # Testing the plotting functions.
 
-require(cyder); require(testthat)
+require(cydar); require(testthat)
 set.seed(200)
 
 x <- runif(1000)

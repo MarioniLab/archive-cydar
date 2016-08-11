@@ -6,15 +6,16 @@
 \description{Pick the best markers that distinguish between cells in and outside of a subpopulation.}
 
 \usage{
-pickBestMarkers(cell.data, chosen, tol=0.5, downsample=10, p=0.05)
+pickBestMarkers(cell.data, chosen, tol=0.5, downsample=10, p=0.05, naive=FALSE)
 }
 
 \arguments{
 \item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
 \item{chosen}{A character vector specifying the names of the hyperspheres corresponding to the subpopulation of interest.}
-\item{tol}{A numeric scalar, equal to that used in \code{\link{recountCells}} to obtain the hypersphere counts.} 
+\item{tol}{A numeric scalar, equal to that used in \code{\link{countCells}} to obtain the hypersphere counts.} 
 \item{downsample}{A numeric scalar specifying the cell downsampling interval.}
 \item{p}{A numeric scalar defining the quantiles for gating.}
+\item{naive}{A logical scalar specifying whether a naive search should be used.}
 }
 
 \details{
@@ -24,7 +25,7 @@ Provided these row names have not been altered, users can use them directly as \
 
 Cells in \code{cell.data} are downsampled according to \code{downsample}.
 The function then identifies all cells in the downsampled set that were counted into any of the hyperspheres specified by \code{chosen} at the tolerance \code{tol}.
-Note that \code{tol} \emph{must} be the same as the value used in \code{\link{recountCells}} to originally count the cells into hyperspheres.
+Note that \code{tol} \emph{must} be the same as the value used in \code{\link{countCells}} to originally count the cells into hyperspheres.
 We also strongly recommended that \code{downsample} also be set to the same value.
 (This ensures that the identified cells are consistent with those that were originally counted.
 It also avoids situations where no cells are counted into hyperspheres for rare subpopulations, which prevents GLM fitting as the response will only have one level.)
@@ -55,7 +56,7 @@ Aaron Lun
 }
 
 \seealso{
-\code{\link{recountCells}},
+\code{\link{countCells}},
 \code{\link{prepareCellData}},
 \code{\link{glmnet}}
 }
@@ -76,8 +77,8 @@ X <- prcomp(cnt$coordinates)
 plot(X$x[,1], X$x[,2], col=ifelse(mock$cluster==1L, "red", "blue"))
 
 # Using the row names for selection (which are the column indices of 'cd')
-selected <- as.integer(rownames(cnt$coordinates))[mock$cluster==1L]
+selected <- rownames(cnt$coordinates)[mock$cluster==1L]
 
-# Using the same default 'tol' as recountCells.
+# Using the same default 'tol' as countCells.
 pickBestMarkers(cd, selected)
 }

@@ -1,5 +1,5 @@
-\name{recountCells}
-\alias{recountCells}
+\name{countCells}
+\alias{countCells}
 
 \title{Count cells in high-dimensional space}
 

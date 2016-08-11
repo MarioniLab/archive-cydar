@@ -4,7 +4,7 @@ countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, fil
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 27 June 2016
+# last modified 11 August 2016
 {
     .check_cell_data(cell.data)
     sample.id <- attributes(cell.data)$sample.id
@@ -64,14 +64,14 @@ countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, fil
 .recount_cells <- function(curcells, exprs, nsamples, sample.id, distance, cluster.centers, cluster.info, filter) 
 # Helper function so that BiocParallel call is self-contained.
 {
-    out <- .Call("count_cells", exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells)
+    out <- .Call(cxx_count_cells, exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells)
     if (!is.character(out)) { 
         counts <- out[[1]]
         coords <- out[[2]]
         keep <- rowSums(counts) >= filter
         counts <- counts[keep,,drop=FALSE]
         coords <- coords[keep,,drop=FALSE]
-        rownames(counts) <- rownames(coords) <- paste0("c", curcells[keep] + 1L)
+        if (any(keep)) { rownames(counts) <- rownames(coords) <- paste0("c", curcells[keep] + 1L) }
         return(list(counts=counts, coords=coords))
     }
     return(out)

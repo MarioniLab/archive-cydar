@@ -1,3 +1,3 @@
 library(testthat)
-library(cyder)
-test_check("cyder")
+library(cydar)
+test_check("cydar")

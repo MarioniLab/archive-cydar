@@ -5,7 +5,8 @@ pickBestMarkers <- function(cell.data, chosen, tol=0.5, downsample=10, p=0.05, n
 # into a box defined by the boundaries of the chosen points (we set 'p' to protect against outliers).
 # 
 # written by Aaron Lun
-# created 10 June 2016    
+# created 10 June 2016
+# last modified 11 August 2016
 {
     .check_cell_data(cell.data)
     markers <- attributes(cell.data)$markers
@@ -30,7 +31,7 @@ pickBestMarkers <- function(cell.data, chosen, tol=0.5, downsample=10, p=0.05, n
     }
 
     # Selecting the centers.
-    was.counted <- .Call("find_counted", coords, cluster.centers, cluster.info, selected, distance)
+    was.counted <- .Call(cxx_find_counted, coords, cluster.centers, cluster.info, selected, distance)
     if (is.character(was.counted)) {
         stop(was.counted)
     }

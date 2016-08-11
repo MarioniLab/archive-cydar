@@ -1,7 +1,5 @@
 #include "objects.h"
 
-extern "C" {
-
 SEXP get_knn_distance(SEXP coords, SEXP centers, SEXP clust_info, SEXP nn) try {
     if (!isInteger(nn) || LENGTH(nn)!=1) { 
         throw std::runtime_error("number of neighbours must be an integer scalar");
@@ -63,4 +61,3 @@ SEXP compute_density (SEXP coords, SEXP centers, SEXP clust_info, SEXP radius) t
     return mkString(e.what());
 }
 
-}

@@ -1,11 +1,9 @@
-#include "cyder.h"
+#include "cydar.h"
 #include "objects.h"
 
 /*****************************************
  * reassign the cells that were counted back to the hypersphere centre.
  *****************************************/
-
-extern "C" {
 
 SEXP find_counted(SEXP hyperx, SEXP centers, SEXP info, SEXP cell_exprs, SEXP distance) try {
     finder fx(hyperx, centers, info);
@@ -42,4 +40,3 @@ SEXP find_counted(SEXP hyperx, SEXP centers, SEXP info, SEXP cell_exprs, SEXP di
     return mkString(e.what());
 }
 
-}

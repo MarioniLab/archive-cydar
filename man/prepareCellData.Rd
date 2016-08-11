@@ -63,5 +63,5 @@ names(attributes(cd))
 }
 
 \seealso{
-\code{\link{recountCells}}
+\code{\link{countCells}}
 }

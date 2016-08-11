@@ -1,7 +1,5 @@
 #include "objects.h"
 
-extern "C" {
-
 SEXP get_nndist(SEXP cells, SEXP centers, SEXP clust_info, SEXP nn, SEXP freq) try {
     if (!isInteger(nn) || LENGTH(nn)!=1) { 
         throw std::runtime_error("number of neighbours must be an integer scalar");
@@ -35,4 +33,3 @@ SEXP get_nndist(SEXP cells, SEXP centers, SEXP clust_info, SEXP nn, SEXP freq) t
     return mkString(e.what());
 }
 
-}

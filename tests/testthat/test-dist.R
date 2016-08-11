@@ -1,6 +1,6 @@
 # This tests the distance calculating machinery.
 
-require(cyder); require(testthat)
+require(cydar); require(testthat)
 set.seed(600)
 ncells <- 1000
 

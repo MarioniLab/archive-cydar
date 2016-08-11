@@ -1,15 +1,14 @@
-Package: cyder
-Version: 0.0.1
-Date: 2016-03-15
-Title: Identifying differential gates from barcoded CyTOF data
+Package: cydar
+Version: 0.99.0
+Date: 2016-08-11
+Title: Using Mass Cytometry for Differential Abundance Analyses 
 Author: Aaron Lun <alun@wehi.edu.au>
 Maintainer: Aaron Lun <alun@wehi.edu.au>
 Depends: BiocParallel
-Imports: plotrix, viridis, glmnet
-Suggests: ncdfFlow 
-biocViews: FlowCytometry 
-Description: This package identifies combinations of gates that 
-    yield differentially abundant populations between samples in
-    barcoded CyTOF data.
+Imports: plotrix, viridis, glmnet, methods
+Suggests: ncdfFlow, flowCore, BiocGenerics, Biobase, testthat
+biocViews: FlowCytometry, MultipleComparison, Proteomics 
+Description: Identifies differentially abundant populations 
+    between samples and groups in mass cytometry data.
 License: GPL-3
 NeedsCompilation: yes

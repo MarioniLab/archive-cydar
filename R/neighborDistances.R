@@ -1,5 +1,9 @@
 neighborDistances <- function(cell.data, neighbors=50, downsample=50, as.tol=TRUE, naive=FALSE) 
 # Calculates the 'tol' required to capture a certain number of neighbors.
+#
+# written by Aaron Lun
+# created 7 July 2016
+# last modified 11 August 2016
 {
     .check_cell_data(cell.data)
     markers <- attributes(cell.data)$markers
@@ -17,7 +21,7 @@ neighborDistances <- function(cell.data, neighbors=50, downsample=50, as.tol=TRU
     if (downsample <= 0L) { stop("'downsample' should be a positive integer") }
 
     # Computing distances.
-    distances <- .Call("get_nndist", cell.data, cluster.centers, cluster.info, neighbors, downsample) 
+    distances <- .Call(cxx_get_nndist, cell.data, cluster.centers, cluster.info, neighbors, downsample) 
     if (is.character(distances)) {
         stop(distances)
     }

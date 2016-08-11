@@ -5,7 +5,7 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 #
 # written by Aaron Lun
 # created 23 May 2016
-# last modified 25 May 2016
+# last modified 11 August 2016
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
     colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
@@ -22,7 +22,7 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
         if (neighbors <= 0L) { stop("'neighbors' must be a positive integer") }
 
         # Figuring out the bandwidth for KDE, as the median of distances to the 50th neighbour.
-        allbands <- .Call("get_knn_distance", converted, cluster.centers, cluster.info, neighbors)
+        allbands <- .Call(cxx_get_knn_distance, converted, cluster.centers, cluster.info, neighbors)
         if (is.character(allbands)) { stop(allbands) }
         bandwidth <- median(allbands)
     } else {
@@ -34,7 +34,7 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
     }
 
     # Computing densities with a tricube kernel.
-    densities <- .Call("compute_density", converted, cluster.centers, cluster.info, bandwidth)
+    densities <- .Call(cxx_compute_density, converted, cluster.centers, cluster.info, bandwidth)
     if (is.character(densities)) { stop(densities) }
     w <- 1/densities
     w[attributes(converted)$cell.id+1L] <- w # Getting back to original ordering.

@@ -1,7 +1,7 @@
 #####################################################
 # This tests the count machinery, to make sure the counts are right.
 
-require(cyder); require(testthat)
+require(cydar); require(testthat)
 
 set.seed(100)
 for (setup in 1:5) {
@@ -61,8 +61,8 @@ for (setup in 1:5) {
     
     # Comparison.
     colnames(collected.counts) <- names(fs)
-    rownames(collected.counts) <- match(c(paste0("0.", which(to.select1)-1L), paste0("1.", which(to.select2)-1L)),
-                                        paste0(attributes(cd)$sample.id, ".", attributes(cd)$cell.id))
+    rownames(collected.counts) <- paste0("c", match(c(paste0("0.", which(to.select1)-1L), paste0("1.", which(to.select2)-1L)),
+                                        paste0(attributes(cd)$sample.id, ".", attributes(cd)$cell.id)))
     expect_identical(collected.counts[keep,,drop=FALSE], out$counts)
 
     collected.meds <- do.call(rbind, collected.meds)
