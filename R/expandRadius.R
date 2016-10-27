@@ -1,0 +1,27 @@
+expandRadius <- function(cell.data, design=NULL, tol=0.5) 
+# This computes the standard deviation in the mean intensities,
+# in order to compute the radius expansion required for handling
+# randomly-distributed intensity shifts between samples.
+#
+# written by Aaron Lun
+# created 27 October 2016    
+{
+    # Computing mean intensities for all markers in all samples.
+    all.means <- list()
+    for (s in seq_along(attributes(cell.data)$samples)) {
+        all.means[[s]] <- rowMeans(cell.data[,attributes(cell.data)$sample.id==s-1L])
+    }
+    all.means <- do.call(rbind, all.means)
+    
+    # Fitting a linear model to estimate variance of shift process per marker.
+    if (is.null(design)) { 
+        design <- matrix(1, nrow=nrow(all.means), ncol=1)
+    }
+    fit <- lm.fit(y=all.means, x=design)
+
+    # Taking the mean variance across all markers, then square-rooting (i.e., root-square-mean of distance)
+    shift <- sqrt(mean(fit$effects[-fit$qr$pivot[seq_len(fit$qr$rank)],]^2)) 
+    
+    # Adding to default tolerance to get per-marker radius.
+    return(shift + tol)
+}

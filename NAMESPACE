@@ -6,9 +6,10 @@ importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
 importFrom("graphics", plot)
 importFrom("methods", is)
-importFrom("stats", coef, kmeans, median, quantile)
+importFrom("stats", coef, kmeans, median, quantile, lm.fit)
 
-export(countCells,
+export(countCells,  
+    expandRadius,
     plotCellLogFC,
     plotCellIntensity,
     intensityRanges,
