@@ -33,6 +33,7 @@ A numeric scalar specifying a modified \code{tol} to use in \code{\link{countCel
 }
 
 \examples{
+### Mocking up some data: ###
 nmarkers <- 40
 marker.names <- paste0("X", seq_len(nmarkers))
 nsamples <- 10
@@ -46,6 +47,7 @@ for (i in sample.names) {
     x[[i]] <- ex
 }
 
+### Running the function: ###
 cd <- prepareCellData(x)
 expandRadius(cd)
 }

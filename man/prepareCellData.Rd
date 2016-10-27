@@ -45,6 +45,7 @@ Aaron Lun
 }
 
 \examples{
+### Mocking up some data: ###
 nmarkers <- 40
 marker.names <- paste0("X", seq_len(nmarkers))
 nsamples <- 10
@@ -57,6 +58,7 @@ for (i in sample.names) {
     x[[i]] <- ex
 }
 
+### Running the function: ###
 cd <- prepareCellData(x)
 dim(cd)
 names(attributes(cd))
