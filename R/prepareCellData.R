@@ -13,9 +13,15 @@ prepareCellData <- function(x, ...)
     sample.id <- rep(seq_along(exprs.list) - 1L, sapply(exprs.list, nrow))
     cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } )) - 1L
 
-    # K-means clustering 
+    # K-means clustering.
     N <- ceiling(sqrt(nrow(exprs)))
-    out <- kmeans(exprs, centers=N, ...)
+    tryCatch({
+        out <- kmeans(exprs, centers=N, ...)
+    }, error=function(e) {
+    }, finally={
+        # Adding jitter, if many cells are duplicated.
+        out <- kmeans(jitter(exprs), centers=N, ...)
+    })
     by.clust <- split(seq_len(nrow(exprs)), out$cluster)
     clust.info <- list()
     new.exprs <- new.samples <- new.cells <- list()
@@ -83,6 +89,7 @@ prepareCellData <- function(x, ...)
         if (is.null(sample.names)) { stop("list must be named by sample") }
         marker.names <- colnames(x[[1]])
         for (i in sample.names) {
+            x[[i]] <- as.matrix(x[[i]])
             tmp <- colnames(x[[i]])
             if (is.null(tmp)) { stop("column names must be labelled with marker identities"); }
             stopifnot(identical(tmp, marker.names))
