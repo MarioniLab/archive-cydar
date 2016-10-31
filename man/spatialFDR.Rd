@@ -15,7 +15,7 @@ spatialFDR(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALSE)
 \item{pvalues}{A numeric vector of p-values for each hypersphere.}
 \item{neighbors}{An integer scalar specifying the number of neighbors with which to compute the bandwidth.}
 \item{bandwidth}{A numeric scalar specifying the bandwidth for density estimation.}
-\item{naive}{A logical scalar specifying whether a naiev search should be performed.}
+\item{naive}{A logical scalar specifying whether a naive search should be performed.}
 }
 
 \details{
