@@ -17,6 +17,7 @@ export(countCells,
     spatialFDR,
     pickBestMarkers,
     prepareCellData,
-    neighborDistances
+    neighborDistances,
+    findFirstSphere
 )
 
