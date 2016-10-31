@@ -26,7 +26,7 @@ SEXP find_counted(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP get_nndist(SEXP, SEXP, SEXP, SEXP, SEXP);
 
-SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP);
+SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 }
 

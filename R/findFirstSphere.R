@@ -15,9 +15,10 @@ findFirstSphere <- function(coords, threshold=1, naive=FALSE)
     }
 
     threshold <- as.double(threshold)
-    nred <- .Call(cxx_drop_redundant, converted, cluster.centers, cluster.info, threshold)
+    actual_order <- order(attributes(converted)$cell.id) - 1L
+    nred <- .Call(cxx_drop_redundant, actual_order, converted, cluster.centers, cluster.info, threshold)
     if (is.character(nred)) { stop(nred) }
 
-    return(data.frame(keep=nred[[1]], closest=nred[[2]], distance=nred[[3]]))
+    return(nred)
 }
 

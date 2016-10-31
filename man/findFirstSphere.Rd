@@ -20,9 +20,9 @@ It will tag a hypersphere as being redundant if its location lies within \code{t
 In this manner, the set of all DA hyperspheres can be filtered down to a non-redundant subset that is easier to interpret.
 
 Note that the criterion for redundancy mentioned above is equivalent to a Chebyshev distance, rather than Euclidean.
-This is easier to interpret and avoids defining hyperspheres as being non-redundant if they have consistent but small shifts in all dimensions.
-(In contrast, cell counting in \code{\link{countCells}} must use the Euclidean distance.
-This is because cells from the same subpopulation may indeed be separated by small, consistent shifts.)
+This is easier to interpret, especially given that the median intensity is defined separately for each marker.
+Unlike in \code{\link{countCells}}, the threshold is not scaled by the number of markers because each hypersphere location is computed as an average across cells.
+This means that there is generally no need to account for extra distance due to noise between cells.
 
 The default \code{threshold} of unity assumes that the intensities have been transformed to or near a log10 scale.
 It means that one hypersphere must vary from another by at least one log10-unit (i.e., a 10-fold change in intensity) in at least one marker to be considered non-redundant.
@@ -42,5 +42,12 @@ A logical vector indicating whether each of the hyperspheres in \code{coords} is
 
 \examples{
 coords <- matrix(rnorm(10000, 2, sd=0.3), nrow=1000)
+pval <- runif(10000)
+
+# Sort by significance.
+o <- order(pval)
+coords <- coords[o,]
+
+# Keep most significant (first) non-redundant hyperspheres.
 findFirstSphere(coords)
 }

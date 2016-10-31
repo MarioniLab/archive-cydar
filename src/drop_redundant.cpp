@@ -1,6 +1,6 @@
 #include "objects.h"
 
-SEXP drop_redundant (SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold) try {
+SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold) try {
     finder fx(coords, centers, clust_info);
     const size_t nhyper=fx.searcher -> get_ncells();
     const size_t nmarkers=fx.searcher -> get_nmarkers();
@@ -11,12 +11,20 @@ SEXP drop_redundant (SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold)
     const double thresh=asReal(threshold);
     const double radius=thresh * std::sqrt(nmarkers);
 
+    if (!isInteger(actual_order)) {
+        throw std::runtime_error("actual_order order vector must be integer");
+    } 
+    if (LENGTH(actual_order)!=nhyper) {
+        throw std::runtime_error("length of actual_order order vector must be equal to number of hyperspheres");
+    }
+    const int* ordering=INTEGER(actual_order);
+    
     SEXP output=PROTECT(allocVector(LGLSXP, nhyper));
     try {
         int* optr=LOGICAL(output);
         std::fill(optr, optr+nhyper, 0);
         std::deque<size_t>& neighbors=fx.searcher->neighbors;
-        std::deque<bool> already_seen(nhyper);
+        std::deque<bool> already_seen(nhyper, false);
 
         size_t ni, mi;
         bool okay;
@@ -26,10 +34,10 @@ SEXP drop_redundant (SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold)
         }
 
         for (size_t h=0; h<nhyper; ++h) {
-            if (already_seen[h]) { continue; }
-            optr[h]=1;
-            fx.searcher->find_neighbors(h, radius, false);
-            dptr_current=dptr + h*nmarkers;
+            const int& actual_index=ordering[h];
+            if (already_seen[actual_index]) { continue; }
+            fx.searcher->find_neighbors(actual_index, radius, false);
+            dptr_current=dptr + actual_index*nmarkers;
 
             for (ni=0; ni<neighbors.size(); ++ni) {
                 okay=false;
@@ -44,6 +52,9 @@ SEXP drop_redundant (SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold)
                     already_seen[neighbors[ni]] = true;
                 }
             }
+           
+            // Not using the index; we'll have to resort anyway, so this would end up being the same. 
+            optr[h]=1;
         }
     } catch (std::exception& e) {
         UNPROTECT(1);
