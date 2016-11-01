@@ -3,7 +3,7 @@
 SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP centers, SEXP cluster_info, SEXP curcells) try {
     finder fx(exprs, centers, cluster_info);
 
-    // Checking samples.
+    // Checking samples and computing sample weights.
     if (!isInteger(nsamp)|| LENGTH(nsamp)!=1) { throw std::runtime_error("number of samples must be an integer scalar"); }
     const int nsamples=asInteger(nsamp);
     if (nsamples <= 0) { throw std::runtime_error("number of samples must be positive"); }
@@ -12,10 +12,17 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
         throw std::runtime_error("sample IDs should be an integer vector of length equal to the number of cells"); 
     }
     const int* sample_ids=INTEGER(sample_id);
+    double* sample_weights=(double*)R_alloc(nsamples, sizeof(double));
+    std::fill(sample_weights, sample_weights+nsamples, 0);
     for (int i=0; i<LENGTH(sample_id); ++i) {
-        if (sample_ids[i] < 0 || sample_ids[i] >= nsamples) {
+        const int& cursample=sample_ids[i];
+        if (cursample < 0 || cursample >= nsamples) {
             throw std::runtime_error("sample IDs out of range");
         }
+        ++(sample_weights[cursample]);
+    }
+    for (int i=0; i<nsamples; ++i) { // Reciprocal of the total number of cells.
+        sample_weights[i]=1/sample_weights[i];
     }
 
     // Checking distances and chosen cells.
@@ -31,7 +38,8 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
         throw std::runtime_error("number of markers should be positive");
     }
     const int* cptr=INTEGER(curcells);
-    
+   
+    // Setting up output vectors. 
     SEXP output=PROTECT(allocVector(VECSXP, 2));
     try {
         std::deque<int*> count_ptrs;
@@ -54,10 +62,10 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
 
         size_t icx, mi;
         int si;   
-        std::deque<double> intensities;
+        std::deque<std::pair<double, int> > intensities;
         const double* marker_exprs;
         size_t midpoint;
-        bool iseven; 
+        double total_weight, midweight, cumweight;
         std::deque<size_t>& collected=(fx.searcher->neighbors);
 
         // Running through all cells.
@@ -72,25 +80,42 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
                 // Check here, otherwise median calculations fail.
                 throw std::runtime_error("cell failed to count itself");
             }
+            total_weight=0;
             for (icx=0; icx<collected.size(); ++icx) {
-                ++(count_ptrs[sample_ids[collected[icx]]][0]);
+                const int& cursample=sample_ids[collected[icx]];
+                ++(count_ptrs[cursample][0]);
+                total_weight+=sample_weights[cursample];
             }
 
-            // Setting the medians.
+            // Setting the weighted medians (to avoid large samples from dominating the location).
             intensities.resize(collected.size());
-            midpoint=intensities.size()/2;
-            iseven=(intensities.size()%2==0);
-
+            midweight=total_weight/2;
             for (mi=0; mi<nmarkers; ++mi) {
+
                 marker_exprs=(fx.searcher->exprs).dptr + mi;
                 for (icx=0; icx<collected.size(); ++icx) {
-                    intensities[icx]=marker_exprs[nmarkers*collected[icx]];
+                    const int& curneighbor=collected[icx];
+                    intensities[icx].first=marker_exprs[nmarkers*curneighbor];
+                    intensities[icx].second=sample_ids[curneighbor];
                 }
                 
                 std::sort(intensities.begin(), intensities.end());
-                coord_ptrs[mi][0]=(iseven ?
-                        (intensities[midpoint-1]+intensities[midpoint])/2 :
-                        (intensities[midpoint]));
+                cumweight=0;
+                for (midpoint=0; midpoint<intensities.size(); ++midpoint) {
+                    cumweight += sample_weights[intensities[midpoint].second];
+                    if (cumweight/total_weight >= 0.5) { break; }
+                }
+               
+                if (midpoint==intensities.size()) {
+                    // Only possible if total_weights is zero. 
+                    coord_ptrs[mi][0]=R_NaReal;
+                } else {
+                    if (cumweight/total_weight==0.5) {
+                        coord_ptrs[mi][0]=(intensities[midpoint].first + intensities[midpoint+1].first)/2;
+                    } else {
+                        coord_ptrs[mi][0]=intensities[midpoint].first;                
+                    }
+                }
                 ++(coord_ptrs[mi]);
             }
 

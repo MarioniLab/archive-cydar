@@ -37,6 +37,11 @@ Each hypersphere also has a radius of \code{tol*sqrt(M)} (this relationship avoi
 The default value of 0.5 means that, for any one marker, cells with +0.5 or -0.5 intensity will be counted into the same subpopulation.
 This value is sensible as intensities are usually on a log-10 scale, such that a total of 10-fold variability in marker intensities is tolerated.
 
+The coordinates are reported as (weighted) medians across all cells in each hypersphere.
+This better reflects the location of the hypersphere if the cells are not distributed around the centre.
+Note that in practice, a weighted median is computed where each cell is weighted inversely proportional to the total number of cells in the corresponding sample.
+This ensures that large samples do not dominate the median calculation.
+
 All hyperspheres with count sums below \code{filter} are removed by default.
 Such hyperspheres do not have enough counts (and thus, information) for downstream analyses.
 Removing them reduces the amount of memory required to form the output matrix.

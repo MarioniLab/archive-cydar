@@ -23,11 +23,11 @@ for (setup in 1:5) {
     }
 
     # Setup.
-    ncells1 <- 1000
+    ncells1 <- 1001
     all.values1 <- matrix(rnorm(ncells1*nmarkers, sd=1), nrow=ncells1, ncol=nmarkers)
     colnames(all.values1) <- paste0("X", seq_len(nmarkers))
     
-    ncells2 <- 2000
+    ncells2 <- 2001
     all.values2 <- matrix(rnorm(ncells2*nmarkers, sd=1), nrow=ncells2, ncol=nmarkers)
     colnames(all.values2) <- colnames(all.values1)
     fs <- list(A=all.values1, B=all.values2)
@@ -47,13 +47,27 @@ for (setup in 1:5) {
     new.dist <- tol * sqrt(nmarkers)
 
     collected.counts <- list()
-    collected.meds <- list()
+    collected.meds.upper <- collected.meds.lower <- list()
     index <- 1L
     for (i in which(to.select)) { 
         curdist <- sqrt(colSums((t(combined) - combined[i,])^2))
         inrange <- curdist <= new.dist
         collected.counts[[index]] <- tabulate(origin[inrange], nbins=length(fs))
-        collected.meds[[index]] <- apply(combined, 2, FUN=function(x) { median(x[inrange]) })
+
+        # Need to calculate lower/upper bounds for the median, as numerical imprecision has big effects.
+        cur.meds <- apply(combined, 2, 
+                          FUN=function(x) { 
+                              x <- x[inrange]
+                              w <- 1/c(ncells1, ncells2)[origin[inrange]]
+                              o <- order(x)
+                              x <- x[o]
+                              w <- w[o]
+                              p <- cumsum(w)/sum(w)
+                              x[c(sum(p < 0.499999), sum(p < 0.500001))+1]
+                          })
+        collected.meds.lower[[index]] <- cur.meds[1,]
+        collected.meds.upper[[index]] <- cur.meds[2,]
+
         index <- index + 1L
     }
     collected.counts <- do.call(rbind, collected.counts)
@@ -65,10 +79,14 @@ for (setup in 1:5) {
                                         paste0(attributes(cd)$sample.id, ".", attributes(cd)$cell.id)))
     expect_identical(collected.counts[keep,,drop=FALSE], out$counts)
 
-    collected.meds <- do.call(rbind, collected.meds)
-    colnames(collected.meds) <- colnames(all.values1)
-    rownames(collected.meds) <- rownames(collected.counts)
-    expect_equal(collected.meds[keep,,drop=FALSE], out$coordinates)
+    expect_identical(colnames(all.values1), colnames(out$coordinates))
+    expect_identical(rownames(collected.counts)[keep], rownames(out$coordinates))
+    collected.meds.lower <- do.call(rbind, collected.meds.lower)[keep,,drop=FALSE]
+    collected.meds.upper <- do.call(rbind, collected.meds.upper)[keep,,drop=FALSE]
+    expect_identical(dim(collected.meds.lower), dim(out$coordinates))
+    expect_identical(dim(collected.meds.upper), dim(out$coordinates))
+    out.of.range <- collected.meds.lower > out$coordinates | collected.meds.upper < out$coordinates
+    expect_true(!any(out.of.range))
 
     expect_equal(tol, out$tolerance)
     expect_equal(c(ncells1, ncells2), out$totals)
