@@ -42,7 +42,7 @@ A logical vector indicating whether each of the hyperspheres in \code{coords} is
 
 \examples{
 coords <- matrix(rnorm(10000, 2, sd=0.3), nrow=1000)
-pval <- runif(10000)
+pval <- runif(1000)
 
 # Sort by significance.
 o <- order(pval)
