@@ -1,5 +1,5 @@
 interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL, 
-    num.per.row=6, plot.height=100, p=0.01, xlim=NULL, run=FALSE, ...)   
+    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=FALSE, ...)   
 # This creates a Shiny app to assist interpretation of the hyperspheres.
 #
 # written by Aaron Lun
@@ -102,8 +102,8 @@ interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL,
             }
             o <- order(all.dist)[1:5]
             closest <- is.anno[o]
-            data.frame(Number=as.character(closest), Name=sphere.names[closest],
-                Label=collected$labels[closest], Distance=all.dist[o])
+            data.frame(Distance=all.dist[o], Number=as.character(closest), 
+                Name=sphere.names[closest], Label=collected$labels[closest])
         })
 
     }
