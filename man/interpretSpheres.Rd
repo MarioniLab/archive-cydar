@@ -1,0 +1,76 @@
+\name{interpretSpheres}
+\alias{interpretSpheres}
+
+\title{Interactive interpretation of hyperspheres}
+\description{Launches a Shiny app to assist interpretation of hyperspheres.}
+
+\usage{
+interpretSpheres(coords, cell.data, markers=NULL, labels=NULL,
+    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)
+}
+
+\arguments{
+\item{coords}{A numeric matrix of hypersphere coordinates, containing the median intensity of each marker (column) in each hypersphere (row).}
+\item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
+\item{markers}{A character vector indicating the markers to use, and the order they should be plotted in. 
+If \code{NULL}, all markers are used in the order corresponding to the columns of \code{coords}.}
+\item{labels}{A character vector containing existing labels for the hyperspheres.
+This should be of length equal to the number of rows in \code{coords}.}
+\item{num.per.row}{An integer scalar specifying the number of plots per row.}
+\item{plot.height}{An integer scalar specifying the height of each plot in pixels.}
+\item{xlim}{A numeric vector of length two specifying the x-axis limits for all plots.
+Otherwise, \code{\link{intensityRanges}} is used to define limits for each marker.}
+\item{p}{A numeric scalar to be passed to \code{\link{intensityRanges}}.}
+\item{run}{A logical scalar specifying whether the Shiny app should be run.}
+\item{...}{Additional arguments to be passed to \code{\link{density}}.}
+}
+
+\details{
+This function creates a Shiny app in which density plots are constructed for intensities across all cells, one for each marker.
+For a given hypersphere, the median intensity is plotted as a red circle on top of the density plot for each marker.
+The area under the curve is highlighted using the \code{\link{viridis}} colour scheme, based on whether the median is relatively high or low compared to all of the cells.
+
+The idea is to allow users to inspect each hypersphere to quickly determine its biological meaning, based on the expression of particular markers.
+For each hypersphere, the closest hyperspheres that have already been labelled are also shown, along with the Euclidean distances to their locations.
+This helps with the labelling process by identifying labels in the neighbouring space.
+
+Users can navigate across hyperspheres (i.e., up or down the rows in \code{coords}) using the \dQuote{Previous} or \dQuote{Next} buttons.
+Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to} field.
+The navigation history at any given time is shown in the side bar.
+
+Finally, the labels can be saved to R using the \dQuote{Save to R} button.
+This stops the app and returns a character vector of labels in the R session.
+Existing labels can also be re-used by supplying them to \code{labels}, to allow users to label parts at a time.
+}
+
+\value{
+A Shiny app is created and, if \code{run=TRUE}, opened in the browser for interactive analysis.
+Upon stopping, a character vector of length equal to the number of rows in \code{coords} is returned.
+}
+
+\author{
+    Aaron Lun
+}
+
+\seealso{
+    \code{\link{density}},
+    \code{\link{intensityRanges}}
+}
+
+\examples{
+# Mocking up some data.
+example(prepareCellData)
+coords <- matrix(rgamma(nmarkers*100, 2, 2), ncol=nmarkers, nrow=100)
+colnames(coords) <- attributes(cd)$markers
+
+# Constructing the app
+app <- interpretSpheres(coords, cd, run=FALSE)
+
+\dontrun{# Running the app from the object.
+labels <- runApp(app)
+
+#Or directly running the app from the function.
+labels <- interpretSpheres(coords, cd)
+}
+}
+

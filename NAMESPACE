@@ -4,9 +4,15 @@ import(BiocParallel)
 importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
-importFrom("graphics", plot)
 importFrom("methods", is)
-importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun)
+importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density)
+
+importFrom("graphics", plot, points)
+importFrom("shiny", 
+        column, fluidPage, fluidRow, pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
+        observeEvent, actionButton, textInput,
+        plotOutput, renderPlot, renderTable, tableOutput,
+        shinyApp, stopApp)
 
 export(countCells,  
     expandRadius,
@@ -18,6 +24,7 @@ export(countCells,
     pickBestMarkers,
     prepareCellData,
     neighborDistances,
-    findFirstSphere
+    findFirstSphere,
+    interpretSpheres
 )
 
