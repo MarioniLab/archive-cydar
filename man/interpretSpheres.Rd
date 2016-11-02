@@ -44,8 +44,12 @@ Existing labels can also be re-used by supplying them to \code{labels}, to allow
 }
 
 \value{
-A Shiny app is created and, if \code{run=TRUE}, opened in the browser for interactive analysis.
-Upon stopping, a character vector of length equal to the number of rows in \code{coords} is returned.
+If \code{run=FALSE}, a Shiny app is returned that can be run with \code{\link{runApp}}.
+This passes control to a browser window in which labels can be entered for each hypersphere.
+Upon stopping the app, a character vector of length equal to the number of rows in \code{coords} is returned.
+
+If \code{run=TRUE}, a Shiny app is opened directly in a browser window.
+This returns a character vector upon stopping, as previously described.
 }
 
 \author{
@@ -54,7 +58,8 @@ Upon stopping, a character vector of length equal to the number of rows in \code
 
 \seealso{
     \code{\link{density}},
-    \code{\link{intensityRanges}}
+    \code{\link{intensityRanges}},
+    \code{\link{runApp}}
 }
 
 \examples{
@@ -67,7 +72,7 @@ colnames(coords) <- attributes(cd)$markers
 app <- interpretSpheres(coords, cd, run=FALSE)
 
 \dontrun{# Running the app from the object.
-labels <- runApp(app)
+labels <- shiny::runApp(app)
 
 #Or directly running the app from the function.
 labels <- interpretSpheres(coords, cd)
