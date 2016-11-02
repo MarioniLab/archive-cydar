@@ -30,6 +30,19 @@ This avoids reporting many hyperspheres that differ from each other by relativel
 Greater resolution can be obtained by decreasing this value, e.g., to 0.5.
 
 Note that setting \code{naive=TRUE} will only change the speed of the algorithm, not the results.
+
+% One question that arises is that, now that you have "non-redundant" hyperspheres, why can't you control the FDR across them directly?
+% The answer is because the process of defining non-redundancy requires searching for the lowest p-values.
+% You don't account for the implicit multiple testing in the surrounding space, which is likely to result in some liberalness.
+% This is equivalent to partitioning the space, and then taking the lowest p-value in each partition as the representative for testing.
+%
+% On the flipside, the other question is if we controlled the spatial FDR, what is the FDR across the non-redundant hyperspheres?
+% It should be very similar, as you now have one entry per hypercubic partition (of size equal to 2*threshold).
+% The problem above doesn't apply because we're not using the non-redundant p-values for testing.
+% To extend the analogy, it's like selecting the best p-value as a representative for examination, but not for testing.
+%
+% There might be some loss of control due to edge effects (as the partitions are always centered around the most significant local hypersphere).
+% However, these should largely cancel out between the true and false positives, so the FDR shouldn't be too far off.
 }
 
 \value{
@@ -48,6 +61,6 @@ pval <- runif(1000)
 o <- order(pval)
 coords <- coords[o,]
 
-# Keep most significant (first) non-redundant hyperspheres.
+# Keep most significant non-redundant ("first") hyperspheres.
 findFirstSphere(coords)
 }
