@@ -28,6 +28,9 @@ For example, assume that at least 20 cells in each hypersphere are needed to hav
 Now, consider all hyperspheres that are large enough to include the 19th nearest neighbour.
 The average distance required to do so would be the median of the boxplot generated from the 19th column of the output.
 
+% It's fair to say that most hyperspheres would around about 20 cells.
+% If we use the median distance to the 19th nearest neighbor, then - well - exactly 50% of hyperspheres would be above 20, and 50% would be below 20.
+
 Note that, for each examined cell, its neighbors are identified from the full set of cells.
 Downsampling only changes the rate at which cells are examined, for the sake of computational efficiency.
 Neighbors are not identified from the downsampled set as this will inflate the reported distances.
