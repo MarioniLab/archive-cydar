@@ -22,6 +22,12 @@ If \code{as.tol=TRUE}, these distances are reported on the same scale as \code{t
 This allows users to choose a value for \code{tol} based on the output of this function.
 Otherwise, the distances are reported without modification.
 
+To visualize these values, the use of boxplots is recommended as shown below.
+Each boxplot represents the distribution of radii required for hyperspheres to contain a certain number of cells.
+For example, assume that at least 20 cells in each hypersphere are needed to have sufficient power for hypothesis testing.
+Now, consider all hyperspheres that are large enough to include the 19th nearest neighbour.
+The average distance required to do so would be the median of the boxplot generated from the 19th column of the output.
+
 Note that, for each examined cell, its neighbors are identified from the full set of cells.
 Downsampling only changes the rate at which cells are examined, for the sake of computational efficiency.
 Neighbors are not identified from the downsampled set as this will inflate the reported distances.
@@ -40,10 +46,12 @@ boxplot(distances, xlab="Neighbor", ylab="Distance")
 
 # Making a plot to choose 'tol' in countCells().
 distances <- neighborDistances(cd, as.tol=TRUE)
-distances <- cbind(0, distances)
-boxplot(distances, horizontal=TRUE, xlab="Tolerance", 
-    ylab="Cell count", yaxt="n")
-axis(side=2, at=pretty(c(0, ncol(distances))))
+boxplot(distances, xlab="Neighbor", xlab="Tolerance")
+
+required.count <- 20 # 20 cells per hypersphere 
+med <- median(distances[,required.count-1]) 
+segments(-10, med, required.count-1, col="dodgerblue")
+segments(required.count-1, med, y1=0, col="dodgerblue")
 }
 
 \author{
