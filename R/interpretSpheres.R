@@ -1,5 +1,5 @@
 interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL, 
-    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=FALSE, ...)   
+    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)   
 # This creates a Shiny app to assist interpretation of the hyperspheres.
 #
 # written by Aaron Lun
