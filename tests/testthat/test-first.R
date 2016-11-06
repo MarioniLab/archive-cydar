@@ -3,29 +3,32 @@
 require(cydar); require(testthat)
 set.seed(400)
 nhypers <- 1000
-nmarkers <- 10
-coords <- matrix(rnorm(nhypers*nmarkers, sd=1), nrow=nhypers, ncol=nmarkers)
 
-for (threshold in c(0.5, 1, 2)) {
-    keep <- findFirstSphere(coords, threshold=threshold)
-    nkeep <- findFirstSphere(coords, threshold=threshold, naive=TRUE)
-    expect_identical(keep, nkeep)
-
+for (nmarkers in c(10, 20, 30)) {
+    coords <- matrix(rnorm(nhypers*nmarkers, sd=1), nrow=nhypers, ncol=nmarkers)
+    pval <- rbeta(nhypers, 1, 10)
     tcoords <- t(coords)
-    ref <- !logical(nhypers)
-    keep <- logical(nhypers)
-    for (i in seq_len(nhypers)) {
-        if (i>1) {
-            if (any(colSums(abs(tcoords[,keep,drop=FALSE] - tcoords[,i]) <= threshold)==nmarkers)) {
-                ref[i] <- FALSE
+    o <- order(pval) 
+    
+    for (threshold in c(0.5, 1, 2)) {
+        xkeep <- findFirstSphere(coords, pvalues=pval, threshold=threshold)
+        nkeep <- findFirstSphere(coords, pvalues=pval, threshold=threshold, naive=TRUE)
+        expect_identical(xkeep, nkeep)
+        
+        ref <- logical(nhypers)
+        locals <- integer(nhypers)
+        for (j in seq_along(o)) {
+            i <- o[j]
+            if (j > 1) {
+                if (!any(colSums(abs(tcoords[,ref,drop=FALSE] - tcoords[,i]) <= threshold)==nmarkers)) {
+                    ref[i] <- TRUE
+                }
             } else {
-                keep[i] <- TRUE
+                ref[i] <- TRUE
             }
-        } else {
-            keep[i] <- TRUE
         }
+        
+        expect_identical(ref, xkeep)
     }
-
-    expect_identical(ref, keep)
 }
 

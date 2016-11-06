@@ -2,14 +2,15 @@
 \alias{findFirstSphere}
 
 \title{Identifies the first non-redundant hyperspheres}
-\description{Tests whether each hypersphere is not redundant to (i.e., lies more than a threshold distance away from) another higher-ranking hypersphere.}
+\description{Tests whether each hypersphere is not redundant to (i.e., lies more than a threshold distance away from) another hypersphere with a lower p-value.}
 
 \usage{
-findFirstSphere(coords, threshold=1, naive=FALSE)
+findFirstSphere(coords, pvalues, threshold=1, naive=FALSE)
 }
 
 \arguments{
-\item{coords}{A numeric matrix of hypersphere coordinates (median locations for all markers), where rows correspond to hyperspheres and are sorted by some metric.}
+\item{coords}{A numeric matrix of hypersphere coordinates (median locations for all markers), where rows correspond to hyperspheres and columns correspond to markers.}
+\item{pvalues}{A numeric vector of p-values, one for each hypersphere/row of \code{coords}.}
 \item{threshold}{A numeric scalar specifying the maximum distance between the locations of two redundant hyperspheres.}
 \item{naive}{A logical scalar specifying whether naive counting should be performed.}
 }
@@ -31,18 +32,15 @@ Greater resolution can be obtained by decreasing this value, e.g., to 0.5.
 
 Note that setting \code{naive=TRUE} will only change the speed of the algorithm, not the results.
 
-% One question that arises is that, now that you have "non-redundant" hyperspheres, why can't you control the FDR across them directly?
-% The answer is because the process of defining non-redundancy requires searching for the lowest p-values.
-% You don't account for the implicit multiple testing in the surrounding space, which is likely to result in some liberalness.
-% This is equivalent to partitioning the space, and then taking the lowest p-value in each partition as the representative for testing.
-%
-% On the flipside, the other question is if we controlled the spatial FDR, what is the FDR across the non-redundant hyperspheres?
-% It should be very similar, as you now have one entry per hypercubic partition (of size equal to 2*threshold).
-% The problem above doesn't apply because we're not using the non-redundant p-values for testing.
-% To extend the analogy, it's like selecting the best p-value as a representative for examination, but not for testing.
-%
-% There might be some loss of control due to edge effects (as the partitions are always centered around the most significant local hypersphere).
-% However, these should largely cancel out between the true and false positives, so the FDR shouldn't be too far off.
+% Does the spatial FDR control the FDR across the reported non-redundant locations?
+% In general, using spatialFDR() is fine; the non-redundant locations can be considered as centres of non-overlapping hypercubic partitions of side length "threshold".
+% Thus, controlling the spatial FDR should be similar to controlling the FDR across these partitions.
+%       Of course, there are some edge cases where this reasoning could fail, e.g., with diffuse DA subpopulations and tight non-DA subpopulations.
+% If both subpopulations are detected, the spatial FDR may be low, because the former supplies a lot of true positive volume.
+% However, the FDR across the non-redundant hyperspheres might be high if each subpopulation is represented by a single non-redundant hypersphere.
+%       Ideally, we would like to control the FDR across the non-redundant hyperspheres directly.
+% However, this is not possible because the definition of non-redundancy depends on the p-value.
+% Applying the BH method to the non-redundant p-values would fail to account for the implicit multiple testing in the surrounding space.
 }
 
 \value{
@@ -54,13 +52,10 @@ A logical vector indicating whether each of the hyperspheres in \code{coords} is
 }
 
 \examples{
+# Mocking up some data.
 coords <- matrix(rnorm(10000, 2, sd=0.3), nrow=1000)
 pval <- runif(1000)
 
-# Sort by significance.
-o <- order(pval)
-coords <- coords[o,]
-
 # Keep most significant non-redundant ("first") hyperspheres.
-findFirstSphere(coords)
+findFirstSphere(coords, pval)
 }

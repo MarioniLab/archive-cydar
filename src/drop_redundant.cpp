@@ -36,6 +36,7 @@ SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_in
         for (size_t h=0; h<nhyper; ++h) {
             const int& actual_index=ordering[h];
             if (already_seen[actual_index]) { continue; }
+            optr[actual_index]=1;
             fx.searcher->find_neighbors(actual_index, radius, false);
             dptr_current=dptr + actual_index*nmarkers;
 
@@ -52,9 +53,6 @@ SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_in
                     already_seen[neighbors[ni]] = true;
                 }
             }
-           
-            // Not using the index; we'll have to resort anyway, so this would end up being the same. 
-            optr[h]=1;
         }
     } catch (std::exception& e) {
         UNPROTECT(1);

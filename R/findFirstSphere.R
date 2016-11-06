@@ -1,4 +1,4 @@
-findFirstSphere <- function(coords, threshold=1, naive=FALSE)
+findFirstSphere <- function(coords, pvalues, threshold=1, naive=FALSE)
 # Returns a logical vector indicating which hyperspheres are redundant
 # within the specified distance threshold.
 #
@@ -14,11 +14,17 @@ findFirstSphere <- function(coords, threshold=1, naive=FALSE)
         cluster.info <- attributes(converted)$cluster.info
     }
 
-    threshold <- as.double(threshold)
-    actual_order <- order(attributes(converted)$cell.id) - 1L
-    nred <- .Call(cxx_drop_redundant, actual_order, converted, cluster.centers, cluster.info, threshold)
-    if (is.character(nred)) { stop(nred) }
+    # Getting the original ordering.
+    cell.ids <- attributes(converted)$cell.id + 1L
 
-    return(nred)
+    # Checking for non-redundancy.
+    threshold <- as.double(threshold)
+    actual_order <- order(pvalues[cell.ids]) - 1L
+    out <- .Call(cxx_drop_redundant, actual_order, converted, cluster.centers, cluster.info, threshold)
+    if (is.character(out)) { stop(out) }
+   
+    # Generating output with the original ordering in 'coords' 
+    out[cell.ids] <- out
+    return(out)
 }
 
