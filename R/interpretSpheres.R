@@ -11,6 +11,7 @@ interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL,
     plot.height <- plot.height*nrows
     collim <- intensityRanges(cell.data, p=p)
 
+    coords <- as.matrix(coords)
     if (is.null(rownames(coords))) {
         sphere.names <- seq_len(nrow(coords))
     } else {
