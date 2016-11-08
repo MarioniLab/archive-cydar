@@ -1,10 +1,11 @@
-quantileBatch <- function(batch.x, batch.comp)
-# Performs quantile adjustment of different batches, given a 
+normalizeBatch <- function(batch.x, batch.comp, mode=c("quantile", "range"), p=0.01)
+# Performs quantile or range adjustment of different batches, given a 
 # list of 'x' objects like that used for 'prepareCellData'
 # and another list specifying the composition of samples per batch.
 #
 # written by Aaron Lun
-# created 27 October 2016    
+# created 27 October 2016
+# last modified 8 November 2016 
 {
     if (is.null(batch.comp)) {
         batch.comp <- lapply(batch.x, function(i) rep(1, length(i)))
@@ -73,6 +74,7 @@ quantileBatch <- function(batch.x, batch.comp)
     }
     names(output) <- names(batch.x)
 
+    mode <- match.arg(mode)
     for (m in ref.markers) {
         # Making a empirical cumprob -> quantile for each batch, given the marker.
         all.quanfun <- list()
@@ -89,36 +91,62 @@ quantileBatch <- function(batch.x, batch.comp)
             cur.weights <- batch.weights[[b]][o]
 
             # Taking the midpoint of each step, rather than the start/end points.
-            mid.cum.weight <- cumsum(cur.weights) - cur.weights
+            mid.cum.weight <- cumsum(cur.weights) - cur.weights/2
             total.weight <- sum(cur.weights)
             all.quanfun[[b]] <- approxfun(mid.cum.weight/total.weight, all.obs, rule=2)
         }
 
-        for (b in seq_len(nbatches)) { 
-            current.quants <- environment(all.quanfun[[b]])$y
-            current.probs <- environment(all.quanfun[[b]])$x
+        if (mode=="quantile") { 
+            for (b in seq_len(nbatches)) { 
+                current.quants <- environment(all.quanfun[[b]])$y
+                current.probs <- environment(all.quanfun[[b]])$x
 
-            # Correcting intensities for each sample in each batch; first by
-            # computing the average distribution to which all others should be squeezed.
-            cur.average <- 0
-            for (b2 in seq_len(nbatches)) { 
-                if (b==b2) { 
-                    cur.average <- cur.average + current.quants
-                } else{
-                    cur.average <- cur.average + all.quanfun[[b2]](current.probs)
+                # Correcting intensities for each sample in each batch; first by
+                # computing the average distribution to which all others should be squeezed.
+                cur.average <- 0
+                for (b2 in seq_len(nbatches)) { 
+                    if (b==b2) { 
+                        cur.average <- cur.average + current.quants
+                    } else{
+                        cur.average <- cur.average + all.quanfun[[b2]](current.probs)
+                    }
+                }
+                cur.average <- cur.average/length(batch.x)
+
+                # Constructing a function to do that squeezing (we could use the ordering to 
+                # get exactly which entry corresponds to which original observation, but that
+                # doesn't allow for samples that weren't used, e.g., due to non-common levels).
+                converter <- approxfun(current.quants, cur.average, rule=2) 
+            
+                cur.out <- batch.out[[b]]
+                for (s in seq_along(cur.out$exprs)) {
+                    output[[b]][[s]][,m] <- converter(cur.out$exprs[[s]][,m])                
+                }
+            }        
+        } else {
+            # Computing the average max/min.
+            all.min <- all.max <- 0
+            for (b in seq_len(nbatches)) { 
+                all.min <- all.min + all.quanfun[[b]](p)
+                all.max <- all.max + all.quanfun[[b]](1-p)
+            }
+            all.min <- all.min/nbatches
+            all.max <- all.max/nbatches
+
+            # Scaling intensities per batch so that the observed range equals the average range.
+            for (b in seq_len(nbatches)) {
+                targets <- c(all.min, all.max)
+                current <- c(all.quanfun[[b]](p), all.quanfun[[b]](1-p))
+                fit <- lm(targets ~ current)
+                cur.out <- batch.out[[b]]
+
+                for (s in seq_along(cur.out$exprs)) {
+                    output[[b]][[s]][,m] <- cur.out$exprs[[s]][,m] * coef(fit)[2] + coef(fit)[1]
                 }
             }
-            cur.average <- cur.average/length(batch.x)
-
-            # Constructing a function to do that squeezing (we could use the ordering to 
-            # get exactly which entry corresponds to which original observation, but that
-            # doesn't allow for samples that weren't used, e.g., due to non-common levels).
-            converter <- approxfun(current.quants, cur.average, rule=2) 
-            cur.out <- batch.out[[b]]
-            for (s in seq_along(cur.out$exprs)) {
-                output[[b]][[s]][,m] <- converter(cur.out$exprs[[s]][,m])                
-            }
-        }        
+            
+        }
     }
     return(output)
 }
+

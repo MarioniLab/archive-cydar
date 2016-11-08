@@ -1,16 +1,18 @@
-\name{quantileBatch}
-\alias{quantileBatch}
+\name{normalizeBatch}
+\alias{normalizeBatch}
 
 \title{Quantile normalize intensities across batches}
 \description{Perform quantile normalization to correct intensities across batches with at least one common level.}
 
 \usage{
-quantileBatch(batch.x, batch.comp)
+normalizeBatch(batch.x, batch.comp, mode=c("quantile", "range"), p=0.01)
 }
 
 \arguments{
 \item{batch.x}{A list, where each element is of the same type as \code{x} used in \code{\link{prepareCellData}} (i.e., a ncdfFlowSet or a list of intensity matrices across all samples).}
 \item{batch.comp}{A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.}
+\item{mode}{A string specifying whether quantile or range-based normalization should be performed.}
+\item{p}{A numeric scalar between 0 and 0.5, specifying the percentile used to define the range of the distribution for range-based normalization.}
 }
 
 \details{ 
@@ -31,7 +33,13 @@ Groupings can be specified as batch-specific factors in \code{batch.comp}, with 
 Ideally, all batches would contain samples from all groups, with similar total numbers of cells across batches for each group.
 For non-shared groups, note that the adjustment function may not be accurate if the to-be-corrected intensities lie outside the range of values used to construct the function.
 
-To convert the output into a format appropriate for \code{\link{prepareCellData}}, apply \code{\link{unlist}} with \code{recursive=TRUE}.
+If \code{mode="range"}, range-based normalization is performed instead instead of quantile normalization.
+For each marker, the range of the reference distribution is computed, using percentiles at \code{p} to avoid distortions due to outliers.
+A batch-specific scaling function is defined to equalize the range of the weighted distribution of intensities from each batch to the reference range.
+This function is then applied to all samples, yielding normalized intensities.
+Compared to \code{mode="quantile"}, range-based normalization avoids assuming that all differences between batches are technical, but cannot handle non-linear technical effects.
+
+To convert the output into a format appropriate for \code{\link{prepareCellData}}, apply \code{\link{unlist}} with \code{recursive=FALSE}.
 This will generate a list of intensity matrices for all samples in all batches, rather than a list of list of matrices.
 Note that a batch effect should still be included in the design matrix when modelling abundances, as only the intensities are corrected here.
 }
@@ -75,7 +83,16 @@ batch.comp <- list( # Each batch contains different composition/ordering of grou
 )
 
 ### Running the function: ###
-corrected <- quantileBatch(all.x, batch.comp)
+corrected <- normalizeBatch(all.x, batch.comp)
+par(mfrow=c(1,2))
+plot(ecdf(all.x[[1]][[3]][,1]), col="blue", main="Before")
+plot(ecdf(all.x[[2]][[3]][,1]), add=TRUE, col="red")
+plot(ecdf(corrected[[1]][[3]][,1]), col="blue", main="After")
+plot(ecdf(corrected[[2]][[3]][,1]), add=TRUE, col="red")
+
+# Similar effects with range-based normalization.
+# (Only in this simple example with scaling and shifting.)
+corrected <- normalizeBatch(all.x, batch.comp, mode="range")
 par(mfrow=c(1,2))
 plot(ecdf(all.x[[1]][[3]][,1]), col="blue", main="Before")
 plot(ecdf(all.x[[2]][[3]][,1]), add=TRUE, col="red")

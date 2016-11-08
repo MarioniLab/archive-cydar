@@ -16,7 +16,7 @@ importFrom("shiny",
 
 export(countCells,  
     expandRadius,
-    quantileBatch,
+    normalizeBatch,
     plotCellLogFC,
     plotCellIntensity,
     intensityRanges,
