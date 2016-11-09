@@ -5,7 +5,7 @@ importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
 importFrom("methods", is)
-importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx)
+importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
 
 importFrom("graphics", plot, points, lines, par, polygon)
 importFrom("shiny", 

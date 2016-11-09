@@ -4,7 +4,8 @@ expandRadius <- function(cell.data, design=NULL, tol=0.5)
 # randomly-distributed intensity shifts between samples.
 #
 # written by Aaron Lun
-# created 27 October 2016    
+# created 27 October 2016   
+# last modified 7 November 2016 
 {
     # Computing mean intensities for all markers in all samples.
     all.means <- list()
@@ -19,9 +20,11 @@ expandRadius <- function(cell.data, design=NULL, tol=0.5)
     }
     fit <- lm.fit(y=all.means, x=design)
 
-    # Taking the mean variance across all markers, then square-rooting (i.e., root-square-mean of distance)
-    shift <- sqrt(mean(fit$effects[-fit$qr$pivot[seq_len(fit$qr$rank)],]^2)) 
+    # Taking the mean variance across all markers, representing squared shift.
+    shift2 <- mean(fit$effects[-fit$qr$pivot[seq_len(fit$qr$rank)],]^2) 
     
     # Adding to default tolerance to get per-marker radius.
-    return(shift + tol)
+    # This is done based on squared distance, hence the squaring and rooting.
+    # Doubling the shift to account for distances between cells, not just distance from cell to mean.
+    return(sqrt(2*shift2 + tol^2))
 }
