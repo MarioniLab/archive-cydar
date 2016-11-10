@@ -9,6 +9,7 @@ for (nmarkers in c(10, 20, 30)) {
     pval <- rbeta(nhypers, 1, 10)
     tcoords <- t(coords)
     o <- order(pval) 
+    block <- sample(3, nhypers, replace=TRUE)
     
     for (threshold in c(0.5, 1, 2)) {
         xkeep <- findFirstSphere(coords, pvalues=pval, threshold=threshold)
@@ -29,6 +30,15 @@ for (nmarkers in c(10, 20, 30)) {
         }
         
         expect_identical(ref, xkeep)
+
+        # Trying with a blocking factor.
+        bkeep <- findFirstSphere(coords, pvalues=pval, threshold=threshold, block=block)
+        all.out <- logical(nhypers)
+        for (i in unique(block)) {
+            chosen <- block==i
+            all.out[chosen] <- findFirstSphere(coords[chosen,,drop=FALSE], pvalues=pval[chosen], threshold=threshold)
+        }
+        expect_identical(all.out, bkeep)
     }
 }
 

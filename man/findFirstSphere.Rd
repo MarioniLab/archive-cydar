@@ -5,13 +5,14 @@
 \description{Tests whether each hypersphere is not redundant to (i.e., lies more than a threshold distance away from) another hypersphere with a lower p-value.}
 
 \usage{
-findFirstSphere(coords, pvalues, threshold=1, naive=FALSE)
+findFirstSphere(coords, pvalues, threshold=1, block=NULL, naive=FALSE)
 }
 
 \arguments{
 \item{coords}{A numeric matrix of hypersphere coordinates (median locations for all markers), where rows correspond to hyperspheres and columns correspond to markers.}
 \item{pvalues}{A numeric vector of p-values, one for each hypersphere/row of \code{coords}.}
 \item{threshold}{A numeric scalar specifying the maximum distance between the locations of two redundant hyperspheres.}
+\item{block}{A factor specifying which hyperspheres belong to which block, where non-redundant hyperspheres are identified within each block.}
 \item{naive}{A logical scalar specifying whether naive counting should be performed.}
 }
 
@@ -29,6 +30,11 @@ The default \code{threshold} of unity assumes that the intensities have been tra
 It means that one hypersphere must vary from another by at least one log10-unit (i.e., a 10-fold change in intensity) in at least one marker to be considered non-redundant.
 This avoids reporting many hyperspheres that differ from each other by relatively small, uninteresting shifts in intensity.
 Greater resolution can be obtained by decreasing this value, e.g., to 0.5.
+
+If \code{block} is set, non-redundant hyperspheres are only identified within each block (i.e., a hypersphere cannot be redundant to hyperspheres in different blocks).
+For example, one can set \code{block} to the sign of the log-fold change.
+This ensures that hyperspheres changing in one direction are not considered redundant to those changing in another direction.
+By default, all hyperspheres are considered to be part of the same block.
 
 Note that setting \code{naive=TRUE} will only change the speed of the algorithm, not the results.
 
@@ -55,7 +61,11 @@ A logical vector indicating whether each of the hyperspheres in \code{coords} is
 # Mocking up some data.
 coords <- matrix(rnorm(10000, 2, sd=0.3), nrow=1000)
 pval <- runif(1000)
+logfc <- rnorm(1000)
 
 # Keep most significant non-redundant ("first") hyperspheres.
 findFirstSphere(coords, pval)
+
+# Block on the sign of the log-fold change.
+findFirstSphere(coords, pval, block=sign(logfc))
 }
