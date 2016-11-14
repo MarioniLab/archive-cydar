@@ -6,11 +6,11 @@
 \description{Expands the hypersphere radius to account for intensity shifting between non-barcoded samples.}
 
 \usage{
-expandRadius(cell.data, design=NULL, tol=0.5)
+expandRadius(x, design=NULL, tol=0.5)
 }
 
 \arguments{
-\item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
+\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
 \item{design}{A numeric matrix specifying the experimental design.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius, see \code{\link{countCells}}.}
 }

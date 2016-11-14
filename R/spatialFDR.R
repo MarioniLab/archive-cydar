@@ -8,13 +8,17 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 # last modified 11 August 2016
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
-    colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
-    converted <- prepareCellData(list(X=coords))
-    if (naive) { 
+    if (naive) {
+        new.coords <- t(coords)
         cluster.centers <- cluster.info <- NULL
+        hyper.ids <- seq_len(nrow(coords))
     } else {
-        cluster.centers <- attributes(converted)$cluster.centers
-        cluster.info <- attributes(converted)$cluster.info
+        colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
+        converted <- prepareCellData(list(X=coords))
+        new.coords <- cellIntensities(converted)
+        cluster.centers <- metadata(converted)$cluster.centers
+        cluster.info <- metadata(converted)$cluster.info
+        hyper.ids <- cellData(converted)$cell.id
     }
 
     if (is.null(bandwidth)) { 
@@ -22,7 +26,7 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
         if (neighbors <= 0L) { stop("'neighbors' must be a positive integer") }
 
         # Figuring out the bandwidth for KDE, as the median of distances to the 50th neighbour.
-        allbands <- .Call(cxx_get_knn_distance, converted, cluster.centers, cluster.info, neighbors)
+        allbands <- .Call(cxx_get_knn_distance, new.coords, cluster.centers, cluster.info, neighbors)
         if (is.character(allbands)) { stop(allbands) }
         bandwidth <- median(allbands)
     } else {
@@ -34,10 +38,10 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
     }
 
     # Computing densities with a tricube kernel.
-    densities <- .Call(cxx_compute_density, converted, cluster.centers, cluster.info, bandwidth)
+    densities <- .Call(cxx_compute_density, new.coords, cluster.centers, cluster.info, bandwidth)
     if (is.character(densities)) { stop(densities) }
     w <- 1/densities
-    w[attributes(converted)$cell.id+1L] <- w # Getting back to original ordering.
+    w[hyper.ids] <- w # Getting back to original ordering.
 
     # Computing a density-weighted q-value.
     o <- order(pvalues)

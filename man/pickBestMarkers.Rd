@@ -3,30 +3,25 @@
 
 \title{Pick best markers}
 
-\description{Pick the best markers that distinguish between cells in and outside of a subpopulation.}
+\description{Pick the best markers that distinguish between cells in and outside of a set of hyperspheres.}
 
 \usage{
-pickBestMarkers(cell.data, chosen, tol=0.5, downsample=10, p=0.05, naive=FALSE)
+pickBestMarkers(x, chosen, downsample=10, p=0.05, naive=FALSE)
 }
 
 \arguments{
-\item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
-\item{chosen}{A character vector specifying the names of the hyperspheres corresponding to the subpopulation of interest.}
-\item{tol}{A numeric scalar, equal to that used in \code{\link{countCells}} to obtain the hypersphere counts.} 
+\item{x}{A cyData object, constructed using \code{\link{countCells}}.}
+\item{chosen}{A vector specifying the rows of \code{x} corresponding to the hyperspheres of interest.} 
 \item{downsample}{A numeric scalar specifying the cell downsampling interval.}
 \item{p}{A numeric scalar defining the quantiles for gating.}
 \item{naive}{A logical scalar specifying whether a naive search should be used.}
 }
 
 \details{
-The subpopulation is defined by a user-supplied set of hyperspheres in \code{chosen}.
-By default, the name of each hypersphere from \code{countCells} specifies a row index of \code{cell.data}, corresponding to the cell on which the hypersphere is centred.
-Provided these row names have not been altered, users can use them directly as \code{chosen}.
-
-Cells in \code{cell.data} are downsampled according to \code{downsample}.
-The function then identifies all cells in the downsampled set that were counted into any of the hyperspheres specified by \code{chosen} at the tolerance \code{tol}.
-Note that \code{tol} \emph{must} be the same as the value used in \code{\link{countCells}} to originally count the cells into hyperspheres.
-We also strongly recommended that \code{downsample} also be set to the same value.
+A putative subpopulation is defined by a user-supplied set of hyperspheres in \code{chosen}.
+Cells in \code{cellIntensities(x)} are downsampled according to \code{downsample}.
+Then, this function identifies all cells in the downsampled set that were counted into any of the hyperspheres specified by \code{chosen} at the tolerance \code{tol}.
+We recommend that \code{downsample} also be set to the same value as that used in \code{\link{countCells}} to construct \code{x}.
 (This ensures that the identified cells are consistent with those that were originally counted.
 It also avoids situations where no cells are counted into hyperspheres for rare subpopulations, which prevents GLM fitting as the response will only have one level.)
 
@@ -71,14 +66,7 @@ colnames(ex) <- paste0("X", seq_len(nmarkers))
 cd <- prepareCellData(list(A=ex))
 cnt <- countCells(cd, filter=1L)
 
-# Selecting one of the mocked-up subpopulations.
-mock <- kmeans(cnt$coordinates, centers=2)
-X <- prcomp(cnt$coordinates)
-plot(X$x[,1], X$x[,2], col=ifelse(mock$cluster==1L, "red", "blue"))
-
-# Using the row names for selection (which are the column indices of 'cd')
-selected <- rownames(cnt$coordinates)[mock$cluster==1L]
-
-# Using the same default 'tol' as countCells.
-pickBestMarkers(cd, selected)
+# Selecting the first mocked-up subpopulations.
+selected <- rowData(cnt)$center.cell <= 1000
+pickBestMarkers(cnt, selected)
 }

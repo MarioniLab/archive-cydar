@@ -11,16 +11,17 @@ suppressWarnings(cd <- prepareCellData(list(A=coords)))
 
 for (nn in c(10L, 20L, 50L)) { 
     # Testing the nearest neighbour machinery.
-    allbands <- .Call("get_knn_distance", cd, attributes(cd)$cluster.centers, attributes(cd)$cluster.info, nn)
+    ci <- cellIntensities(cd)
+    allbands <- .Call("get_knn_distance", ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, nn)
     
-    refdist <- as.matrix(dist(t(cd)))
+    refdist <- as.matrix(dist(t(ci)))
     refbands <- apply(refdist, 1, function(x) { sort(x)[nn] })
     names(refbands) <- NULL
     expect_equal(allbands, refbands)
 
     # This tests the density calculation machinery.
     bandwidth <- median(refbands)
-    densities <- .Call("compute_density", cd, attributes(cd)$cluster.centers, attributes(cd)$cluster.info, bandwidth)
+    densities <- .Call("compute_density", ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, bandwidth)
 
     weightmat <- 1 - (refdist/bandwidth)^3
     weightmat[weightmat < 0] <- 0

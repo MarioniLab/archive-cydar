@@ -1,16 +1,20 @@
-expandRadius <- function(cell.data, design=NULL, tol=0.5) 
+expandRadius <- function(x, design=NULL, tol=0.5) 
 # This computes the standard deviation in the mean intensities,
 # in order to compute the radius expansion required for handling
 # randomly-distributed intensity shifts between samples.
 #
 # written by Aaron Lun
 # created 27 October 2016   
-# last modified 7 November 2016 
+# last modified 14 November 2016 
 {
+    .check_cell_data(x)
+    ci <- cellIntensities(x)
+    sample.id <- cellData(x)$sample.id
+
     # Computing mean intensities for all markers in all samples.
     all.means <- list()
-    for (s in seq_along(attributes(cell.data)$samples)) {
-        all.means[[s]] <- rowMeans(cell.data[,attributes(cell.data)$sample.id==s-1L])
+    for (s in seq_len(ncol(x))) { 
+        all.means[[s]] <- rowMeans(ci[,sample.id==s])
     }
     all.means <- do.call(rbind, all.means)
     

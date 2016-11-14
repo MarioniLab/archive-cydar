@@ -1,15 +1,14 @@
-interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL, 
-    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)   
+interpretSpheres <- function(x, markers=NULL, labels=NULL, num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)   
 # This creates a Shiny app to assist interpretation of the hyperspheres.
 #
 # written by Aaron Lun
 # created 1 November 2016    
-# last modified 2 November 2016
+# last modified 14 November 2016
 {
-    stopifnot(identical(colnames(coords), attributes(cell.data)$markers))
+    coords <- medianIntensities(x)
     nrows <- ceiling(ncol(coords)/num.per.row)
     plot.height <- plot.height*nrows
-    collim <- intensityRanges(cell.data, p=p)
+    collim <- intensityRanges(x, p=p)
 
     coords <- as.matrix(coords)
     if (is.null(rownames(coords))) {
@@ -39,7 +38,7 @@ interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL,
 
     collected$current <- 1
     collected$history <- rep(NA_integer_, 5)
-    all.dens <- .prepareDensity(cell.data, ...)
+    all.dens <- .prepareDensity(x, ...)
 
     # Generating the page layout.
     ui <- pageWithSidebar(
@@ -161,14 +160,15 @@ interpretSpheres <- function(coords, cell.data, markers=NULL, labels=NULL,
     }
 }
 
-.prepareDensity <- function(cell.data, ...) 
+.prepareDensity <- function(x, ...) 
 # Computing the density once to speed up plotting.
 { 
-    all.markers <- attributes(cell.data)$markers
+    ci <- cellIntensities(x)
+    all.markers <- rownames(markerData(x))
     collected <- list()
 
     for (m in seq_along(all.markers)) {
-        cur.intensities <- cell.data[m,]
+        cur.intensities <- ci[m,]
         collected[[m]] <- density(cur.intensities, ...)
     }
 

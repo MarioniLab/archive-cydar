@@ -4,7 +4,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 11 August 2016
+# last modified 14 November 2016
 {
     .check_cell_data(x)
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
@@ -51,7 +51,8 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     colnames(out.counts) <- samples
     out.coords <- do.call(rbind, out.coords)
     colnames(out.coords) <- markers
-    out.index <- unlist(out.index, use.names=FALSE)
+    out.index <- unlist(out.index)
+    names(out.index) <- NULL
 
     # Ordering them (not strictly necessary, just for historical reasons).
     o <- order(sample.id[out.index], cell.id[out.index])

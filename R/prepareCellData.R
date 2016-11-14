@@ -1,6 +1,10 @@
 prepareCellData <- function(x, ...) 
 # Converts it into a format more suitable for high-speed analysis.
 # Also does k-means clustering to generate the necessary clusters.
+#
+# created by Aaron Lun
+# created 14 August 2016
+# last modified 14 November 2016    
 {
     on.exit({gc()}) # Getting rid of huge memory structures that have built up.
 
@@ -56,7 +60,7 @@ prepareCellData <- function(x, ...)
 
 .check_cell_data <- function(x) {
     sample.id <- cellData(x)$sample.id
-    stopifnot(all(sample.id > 0L & sample.id <= ncol(samples)))
+    stopifnot(all(sample.id > 0L & sample.id <= ncol(x)))
 
     cluster.centers <- metadata(x)$cluster.centers        
     stopifnot(nrow(cluster.centers)==nmarkers(x))

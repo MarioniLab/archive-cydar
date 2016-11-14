@@ -22,26 +22,27 @@ findFirstSphere <- function(coords, pvalues, threshold=1, block=NULL, naive=FALS
         return(total.out)
     }
 
-    colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
-    converted <- prepareCellData(list(X=coords))
     if (naive) { 
+        new.coords <- t(coords)
         cluster.centers <- cluster.info <- NULL
+        hyper.ids <- seq_len(nrow(coords))
     } else {
-        cluster.centers <- attributes(converted)$cluster.centers
-        cluster.info <- attributes(converted)$cluster.info
+        colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
+        converted <- prepareCellData(list(X=coords))
+        cluster.centers <- metadata(converted)$cluster.centers
+        cluster.info <- metadata(converted)$cluster.info
+        new.coords <- cellIntensities(converted)
+        hyper.ids <- cellData(converted)$cell.id
     }
-
-    # Getting the original ordering.
-    cell.ids <- attributes(converted)$cell.id + 1L
 
     # Checking for non-redundancy.
     threshold <- as.double(threshold)
-    actual_order <- order(pvalues[cell.ids]) - 1L
-    out <- .Call(cxx_drop_redundant, actual_order, converted, cluster.centers, cluster.info, threshold)
+    actual_order <- order(pvalues[hyper.ids]) - 1L
+    out <- .Call(cxx_drop_redundant, actual_order, new.coords, cluster.centers, cluster.info, threshold)
     if (is.character(out)) { stop(out) }
    
     # Generating output with the original ordering in 'coords' 
-    out[cell.ids] <- out
+    out[hyper.ids] <- out
     return(out)
 }
 

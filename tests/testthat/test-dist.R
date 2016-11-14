@@ -10,7 +10,8 @@ for (nmarkers in c(5, 10, 20)) {
     suppressWarnings(cd <- prepareCellData(list(A=coords)))
 
     for (nn in c(10, 20, 50)) { 
-        refdist <- as.matrix(dist(t(cd)))
+        ci <- cellIntensities(cd)
+        refdist <- as.matrix(dist(t(ci)))
         refbands <- apply(refdist, 1, function(x) { sort(x)[2:(nn+1)] })
         dimnames(refbands) <- NULL
         refbands <- t(refbands)

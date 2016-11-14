@@ -5,11 +5,11 @@
 \description{Set the ranges of the marker intensities, to direct construction of the colour bar for plotting.}
 
 \usage{
-intensityRanges(cell.data, p=0.01)
+intensityRanges(x, p=0.01)
 }
 
 \arguments{
-\item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
+\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
 \item{p}{A numeric scalar specifying the quantile at which intensities should be bounded.}
 }
 
@@ -39,14 +39,14 @@ Aaron Lun
 }
 
 \examples{
-example(prepareCellData, echo=FALSE)
+example(prepareCellData, echo=FALSE) # Using the mocked-up data set.
 bounds <- intensityRanges(cd)
 
 # Plotting example (using a subset for speed).
-cd.subset <- t(cd[,1:1000])
+cd.subset <- t(cellIntensities(cd)[,1:1000])
 coords <- prcomp(cd.subset)
 chosen.marker <- 5
 plotCellIntensity(coords$x[,1], coords$x[,2], 
-    intensity=cd[chosen.marker,], 
+    intensity=cd.subset[chosen.marker,], 
     irange=bounds[,chosen.marker])
 }
