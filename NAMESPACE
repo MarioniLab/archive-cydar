@@ -1,10 +1,9 @@
 useDynLib(cydar, .registration=TRUE, .fixes="cxx_")
 
-import(BiocParallel)
+import(BiocParallel, SummarizedExperiment, S4Vectors, methods)
 importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
-importFrom("methods", is)
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
 
 importFrom("graphics", plot, points, lines, par, polygon)
@@ -13,6 +12,15 @@ importFrom("shiny",
         observeEvent, actionButton, textInput,
         plotOutput, renderPlot, renderTable, tableOutput,
         shinyApp, stopApp, runApp)
+
+exportClasses(cyData)
+
+exportMethods(nmarkers, 
+    ncells,
+    markerData, "markerData<-",
+    medianIntensities, "medianIntensities<-",
+    cellIntensities, "cellIntensities<-"
+)
 
 export(countCells,  
     expandRadius,
@@ -25,6 +33,7 @@ export(countCells,
     prepareCellData,
     neighborDistances,
     findFirstSphere,
-    interpretSpheres
+    interpretSpheres,
+    cyData
 )
 
