@@ -47,14 +47,14 @@
 \details{
 Subsetting of cyData objects consider groups of cells (e.g., clusters, hyperspheres) as the rows, and samples as the columns.
 Only the rows of \code{medianIntensities} are affected during row-wise subsetting.
-Marker and cell information in \code{markerData} and \code{cellIntensities} is not modified.
+Marker and cell information in \code{markerData}, \code{cellData} and \code{cellIntensities} is not modified.
 
-A similar principle applies when combining different cyData objects.
+A similar principle applies when combining different cyData objects, i.e., rows are groups of cells and columns are samples.
 Values of \code{markerData} and \code{cellIntensities} should be identical in the objects to be combined.
 Furthermore, for \code{cbind}, values of \code{medianIntensities} should also be identical.
 Note that \code{c} is a synonym for \code{rbind}.
 
-When replacing entries with \code{[<-}, \code{markerData} and \code{cellIntensities} should be identical in \code{x} and \code{value}.
+When replacing entries with \code{[<-}, \code{markerData}, \code{cellData} and \code{cellIntensities} should be identical in \code{x} and \code{value}.
 }
 
 \author{

@@ -19,7 +19,8 @@ exportMethods(nmarkers,
     ncells,
     markerData, "markerData<-",
     medianIntensities, "medianIntensities<-",
-    cellIntensities, "cellIntensities<-"
+    cellIntensities, "cellIntensities<-",
+    cellData, "cellData<-"
 )
 
 export(countCells,  

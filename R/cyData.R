@@ -3,6 +3,7 @@
 setClass("cyData", contains="SummarizedExperiment", 
          slots=c(markerData="DataFrame",
                  cellIntensities="matrix",
+                 cellData="DataFrame",
                  medianIntensities="matrix"))
 
 setValidity2("cyData", function(object) {
@@ -11,6 +12,9 @@ setValidity2("cyData", function(object) {
     }
     if (storage.mode(object@medianIntensities)!="double") {
         return("medianIntensities should be stored in double-precision")
+    }
+    if (nrow(object@cellData)!=ncol(object@cellIntensities)) {
+        return("number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
     }
     if (nrow(object@markerData)!=nrow(object@cellIntensities)) {
         return("'markerData' and 'cellIntensities' must have same number of rows")
@@ -38,13 +42,15 @@ scat <- function(fmt, vals=character(), exdent=2, ...) {
 setMethod("show", signature("cyData"), function(object) {
     callNextMethod()
     scat("markers(%d): %s\n", rownames(object@markerData))
+    scat("markerData names(%d): %s\n", colnames(object@markerData))
     cat(sprintf("cells: %i\n", ncol(object@cellIntensities)))
+    scat("cellData names(%d): %s\n", colnames(object@cellData))
 })
 
 #############################################
 # Defining a reasonably helpful constructor.
 
-cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, assays=NULL, ...) {
+cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
     marker.names <- rownames(markerData)
     if (is.null(marker.names)) {
         stop("rownames of 'markerData' must contain marker names")
@@ -57,8 +63,12 @@ cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, ass
         rownames(cellIntensities) <- NULL
     }
 
+    if (is.null(cellData)) {
+        cellData <- DataFrame(row.names=seq_len(ncol(cellIntensities)))
+    }
+
     if (is.null(assays)) {
-        assays <- matrix(0, 0, 0)
+        assays <- matrix(0L, 0, ncol(markerData))
     }
     se <- SummarizedExperiment(assays, ...)
 
@@ -69,8 +79,8 @@ cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, ass
         rownames(medianIntensities) <- NULL
     }
 
-    new("cyData", markerData=markerData, cellIntensities=cellIntensities,
-        medianIntensities=medianIntensities, se)
+    new("cyData", markerData=markerData, cellIntensities=cellIntensities, 
+        cellData=cellData, medianIntensities=medianIntensities, se)
 }
 
 #############################################
@@ -127,6 +137,16 @@ setReplaceMethod("cellIntensities", "cyData", function(x, value){
     return(x)
 })
 
+setGeneric("cellData", function(x) standardGeneric("cellData"))
+setMethod("cellData", "cyData", function(x) x@cellData)
+
+setGeneric("cellData<-", function(x, value) standardGeneric("cellData<-"))
+setReplaceMethod("cellData", "cyData", function(x, value){
+    x@cellData <- value
+    validObject(x)
+    return(x)
+})
+
 setGeneric("medianIntensities", function(x) standardGeneric("medianIntensities"))
 setMethod("medianIntensities", "cyData", function(x) x@medianIntensities)
 
@@ -154,7 +174,7 @@ setMethod("cbind", "cyData", function(..., deparse.level=1) {
     }
     
     base <- do.call(cbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new("cyData", base, medianIntensities=ref@medianIntensities,
+    new("cyData", base, medianIntensities=ref@medianIntensities, cellData=ref@cellData,
         cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
@@ -167,7 +187,7 @@ setMethod("rbind", "cyData", function(..., deparse.level=1) {
 
     base <- do.call(rbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
     new.meds <- do.call(rbind, lapply(args, medianIntensities))
-    new("cyData", base, medianIntensities=new.meds,
+    new("cyData", base, medianIntensities=new.meds, cellData=ref@cellData,
         cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 

@@ -17,6 +17,10 @@
 \alias{cellIntensities,cyData-method}
 \alias{cellIntensities<-}
 \alias{cellIntensities<-,cyData-method}
+\alias{cellData}
+\alias{cellData,cyData-method}
+\alias{cellData<-}
+\alias{cellData<-,cyData-method}
 
 \title{cyData getters and setters}
 \description{Methods to get and set data slots in the cyData object.}
@@ -31,6 +35,9 @@
 \S4method{cellIntensities}{cyData}(x)
 \S4method{cellIntensities}{cyData}(x) <- value
 
+\S4method{cellData}{cyData}(x)
+\S4method{cellData}{cyData}(x) <- value
+
 \S4method{nmarkers}{cyData}(x)
 \S4method{ncells}{cyData}(x)
 }
@@ -42,7 +49,7 @@
 
 \details{
 These are methods to get or set the slots in a cyData object. 
-Some caution is advised when using \code{cellIntensities}, as several methods in this package rely on a particular ordering of cells in this slot.
+Some caution is advised when using \code{cellIntensities<-} and/or \code{cellData<-}, as several methods in this package rely on a particular ordering of cells.
 }
 
 \value{

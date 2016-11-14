@@ -9,13 +9,15 @@
 \description{An overview of the cyData class and applicable methods.}
 
 \usage{
-cyData(markerData, medianIntensities=NULL, cellIntensities=NULL, assays=NULL, ...)
+cyData(markerData, medianIntensities=NULL, cellIntensities=NULL, 
+    cellData=NULL, assays=NULL, ...)
 }
 
 \arguments{
 \item{markerData}{A DataFrame where each row corresponds to a marker, and is named according to that marker.}
 \item{medianIntensities}{A numeric matrix of median intensities for each group of cells (row) and each marker (column).}
 \item{cellIntensities}{A numeric matrix of intensities for each marker (row) and in each cell (column).}
+\item{cellData}{A DataFrame containing information about each cell in each row.}
 \item{assays, ...}{Arguments to be passed to the \code{SummarizedExperiment} constructor.}
 }
 
@@ -32,6 +34,8 @@ Each matrix entry contains the median intensity across all cells in a group for 
 \item{cellIntensities}{A numeric matrix containing intensities for each marker in each individual cell in the experiment.
 Each column represents a cell while each row represents a marker.
 This column-major setup is more amenable to fast processing later.
+}
+\item{cellData}{A DataFrame containing information about each cell in each row.
 }
 }
 The above constructor will set \code{medianIntensities} and \code{assays} to a matrix with no rows, if not specified.
@@ -52,7 +56,8 @@ counts <- matrix(rpois(1000, 10), ncol=10)
 medians <- matrix(rgamma(1000, 1, 1), ncol=10)
 cell.int <- matrix(rgamma(10000, 1, 1), nrow=10)
 marker.data <- DataFrame(row.names=LETTERS[1:10])
-cyd <- cyData(counts, markerData=marker.data,
+cell.data <- DataFrame(sample.id=sample(10, 1000, replace=TRUE))
+cyd <- cyData(counts, markerData=marker.data, cellData=cell.data,
     medianIntensities=medians, cellIntensities=cell.int)
 }
 
