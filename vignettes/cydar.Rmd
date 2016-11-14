@@ -113,7 +113,7 @@ This will be required later for interpretation, as the marker intensities are re
 Shown below is the position of the first hypersphere, represented by its set of median intensities across all markers.
 
 ```{r}
-medianIntensities(cd)
+intensities(cd)
 ```
 
 There is some light filtering in `countCells` to improve memory efficiency, which can be adjusted with the `filter` argument.
@@ -159,7 +159,7 @@ This refers to the FDR across areas of the high-dimensional space.
 We do this using the `spatialFDR` function, given the p-values and positions of all tested hyperspheres.
 
 ```{r}
-qvals <- spatialFDR(medianIntensities(cd), res$table$PValue)
+qvals <- spatialFDR(intensities(cd), res$table$PValue)
 ```
 
 Hyperspheres with significant differences in abundance are defined as those detected at a spatial FDR of, say, 5%.
@@ -178,7 +178,7 @@ To interpret the DA hyperspheres, we use dimensionality reduction to visualize t
 This is done here with PCA, though for more complex data sets, we suggest using something like `r CRANpkg("Rtsne")`.
 
 ```{r}
-sig.coords <- medianIntensities(cd)[is.sig,]
+sig.coords <- intensities(cd)[is.sig,]
 sig.res <- res$table[is.sig,]
 coords <- prcomp(sig.coords)
 ```

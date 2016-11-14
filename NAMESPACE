@@ -18,7 +18,7 @@ exportClasses(cyData)
 exportMethods(nmarkers, 
     ncells,
     markerData, "markerData<-",
-    medianIntensities, "medianIntensities<-",
+    intensities, "intensities<-",
     cellIntensities, "cellIntensities<-",
     cellData, "cellData<-"
 )

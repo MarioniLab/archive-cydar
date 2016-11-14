@@ -80,7 +80,7 @@ for (setup in 1:5) {
     expect_identical(rowData(out)$center.cell, match(c(paste0("1.", which(to.select1)), paste0("2.", which(to.select2))),
         paste0(cellData(cd)$sample.id, ".", cellData(cd)$cell.id)))
 
-    med.coords <- medianIntensities(out)
+    med.coords <- intensities(out)
     collected.meds.lower <- do.call(rbind, collected.meds.lower)[keep,,drop=FALSE]
     collected.meds.upper <- do.call(rbind, collected.meds.upper)[keep,,drop=FALSE]
     expect_identical(dim(collected.meds.lower), dim(med.coords))

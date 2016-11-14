@@ -9,13 +9,13 @@
 \description{An overview of the cyData class and applicable methods.}
 
 \usage{
-cyData(markerData, medianIntensities=NULL, cellIntensities=NULL, 
+cyData(markerData, intensities=NULL, cellIntensities=NULL, 
     cellData=NULL, assays=NULL, ...)
 }
 
 \arguments{
 \item{markerData}{A DataFrame where each row corresponds to a marker, and is named according to that marker.}
-\item{medianIntensities}{A numeric matrix of median intensities for each group of cells (row) and each marker (column).}
+\item{intensities}{A numeric matrix of median intensities for each group of cells (row) and each marker (column).}
 \item{cellIntensities}{A numeric matrix of intensities for each marker (row) and in each cell (column).}
 \item{cellData}{A DataFrame containing information about each cell in each row.}
 \item{assays, ...}{Arguments to be passed to the \code{SummarizedExperiment} constructor.}
@@ -28,8 +28,8 @@ It inherits from the SummarizedExperiment class and contains the additional slot
 \item{markerData}{A DataFrame containing information about each marker in each row.
 The row names are used as the marker names.
 }
-\item{medianIntensities}{A numeric matrix where each row corresponds to a group of cells and each column corresponds to a marker.
-Each matrix entry contains the median intensity across all cells in a group for a particular marker.
+\item{intensities}{A numeric matrix where each row corresponds to a group of cells and each column corresponds to a marker.
+Each matrix entry contains the average (usually median) intensity across all cells in a group for a particular marker.
 }
 \item{cellIntensities}{A numeric matrix containing intensities for each marker in each individual cell in the experiment.
 Each column represents a cell while each row represents a marker.
@@ -38,7 +38,7 @@ This column-major setup is more amenable to fast processing later.
 \item{cellData}{A DataFrame containing information about each cell in each row.
 }
 }
-The above constructor will set \code{medianIntensities} and \code{assays} to a matrix with no rows, if not specified.
+The above constructor will set \code{intensities} and \code{assays} to a matrix with no rows, if not specified.
 It will also set \code{cellIntensities} to a matrix with no columns and \code{cellData} to an empty list by default.
 }
 
@@ -58,7 +58,7 @@ cell.int <- matrix(rgamma(10000, 1, 1), nrow=10)
 marker.data <- DataFrame(row.names=LETTERS[1:10])
 cell.data <- DataFrame(sample.id=sample(10, 1000, replace=TRUE))
 cyd <- cyData(counts, markerData=marker.data, cellData=cell.data,
-    medianIntensities=medians, cellIntensities=cell.int)
+    intensities=medians, cellIntensities=cell.int)
 }
 
 \author{

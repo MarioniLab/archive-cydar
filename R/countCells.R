@@ -63,7 +63,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 
     all.ncells <- tabulate(sample.id+1L, length(samples))
     output <- new("cyData", x, assays=Assays(list(counts=out.counts)), 
-                  medianIntensities=out.coords, 
+                  intensities=out.coords, 
                   elementMetadata=DataFrame(center.cell=out.index)) 
     output$totals <- all.ncells
     metadata(output)$tol <- tol

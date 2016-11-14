@@ -58,12 +58,12 @@ Neither this or \code{naive} will not affect the final results, only the speed w
 A cyData object containing the following information:
 \describe{
 \item{\code{counts}}{An integer matrix of counts for each hypersphere (row) and sample (column) in the \code{Assays} slot.}
-\item{\code{medianIntensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{medianIntensities} slot.}
+\item{\code{intensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{intensities} slot.}
 \item{\code{totals}:}{An integer vector specifying the total number of cells in each sample, stored as a field in the \code{colData} slot.}
 \item{\code{tol}:}{An integer scalar equal to \code{tol}, stored in the \code{metadata} slot.}
 \item{\code{center.cell}:}{An integer vector specifying the column of \code{cellIntensities} containing the centre of each hypersphere, stored as a field in the \code{rowData} slot.}
 }
-Any existing \code{rowData}, \code{medianIntensities} and \code{assays} are discarded.
+Any existing \code{rowData}, \code{intensities} and \code{assays} are discarded.
 All other slots are left unchanged from the values supplied in \code{x}.
 }
 
@@ -91,5 +91,5 @@ cnt2 <- countCells(cd, filter=1, downsample=downsample, tol=tol, naive=TRUE)
 
 # Checking that they're all the same.
 stopifnot(identical(assay(cnt), assay(cnt2)))
-stopifnot(all.equal(medianIntensities(cnt), medianIntensities(cnt2)))
+stopifnot(all.equal(intensities(cnt), intensities(cnt2)))
 }

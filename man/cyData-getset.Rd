@@ -9,10 +9,10 @@
 \alias{markerData,cyData-method}
 \alias{markerData<-}
 \alias{markerData<-,cyData-method}
-\alias{medianIntensities}
-\alias{medianIntensities,cyData-method}
-\alias{medianIntensities<-}
-\alias{medianIntensities<-,cyData-method}
+\alias{intensities}
+\alias{intensities,cyData-method}
+\alias{intensities<-}
+\alias{intensities<-,cyData-method}
 \alias{cellIntensities}
 \alias{cellIntensities,cyData-method}
 \alias{cellIntensities<-}
@@ -29,8 +29,8 @@
 \S4method{markerData}{cyData}(x)
 \S4method{markerData}{cyData}(x) <- value
 
-\S4method{medianIntensities}{cyData}(x)
-\S4method{medianIntensities}{cyData}(x) <- value
+\S4method{intensities}{cyData}(x)
+\S4method{intensities}{cyData}(x) <- value
 
 \S4method{cellIntensities}{cyData}(x)
 \S4method{cellIntensities}{cyData}(x) <- value
@@ -69,6 +69,6 @@ markerData(cyd)
 markerData(cyd)$stuff <- runif(nmarkers(cyd))
 markerData(cyd)
 
-head(medianIntensities(cyd))
+head(intensities(cyd))
 cellIntensities(cyd)[,1:10]
 }

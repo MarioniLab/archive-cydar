@@ -4,14 +4,14 @@ setClass("cyData", contains="SummarizedExperiment",
          slots=c(markerData="DataFrame",
                  cellIntensities="matrix",
                  cellData="DataFrame",
-                 medianIntensities="matrix"))
+                 intensities="matrix"))
 
 setValidity2("cyData", function(object) {
     if (storage.mode(object@cellIntensities)!="double") {
         return("cellIntensities should be stored in double-precision")
     }
-    if (storage.mode(object@medianIntensities)!="double") {
-        return("medianIntensities should be stored in double-precision")
+    if (storage.mode(object@intensities)!="double") {
+        return("intensities should be stored in double-precision")
     }
     if (nrow(object@cellData)!=ncol(object@cellIntensities)) {
         return("number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
@@ -19,17 +19,17 @@ setValidity2("cyData", function(object) {
     if (nrow(object@markerData)!=nrow(object@cellIntensities)) {
         return("'markerData' and 'cellIntensities' must have same number of rows")
     }
-    if (ncol(object@medianIntensities)!=nrow(object@markerData)) { 
-        return("number of rows in 'markerData' and columns in 'medianIntensities' must be equal")
+    if (ncol(object@intensities)!=nrow(object@markerData)) { 
+        return("number of rows in 'markerData' and columns in 'intensities' must be equal")
     }
-    if (nrow(object@medianIntensities)!=nrow(object)) { 
-        return("'medianIntensities' and 'object' must have same number of rows")
+    if (nrow(object@intensities)!=nrow(object)) { 
+        return("'intensities' and 'object' must have same number of rows")
     }
     return(TRUE)
 })
 
 setMethod("parallelSlotNames", "cyData", function(x) {
-    c("medianIntensities", callNextMethod()) 
+    c("intensities", callNextMethod()) 
 })
 
 scat <- function(fmt, vals=character(), exdent=2, ...) {
@@ -50,7 +50,7 @@ setMethod("show", signature("cyData"), function(object) {
 #############################################
 # Defining a reasonably helpful constructor.
 
-cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
+cyData <- function(markerData, intensities=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
     marker.names <- rownames(markerData)
     if (is.null(marker.names)) {
         stop("rownames of 'markerData' must contain marker names")
@@ -72,22 +72,22 @@ cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, cel
     }
     se <- SummarizedExperiment(assays, ...)
 
-    if (is.null(medianIntensities)) {
-        medianIntensities <- matrix(0, nrow(assays), nrow(markerData))
+    if (is.null(intensities)) {
+        intensities <- matrix(0, nrow(assays), nrow(markerData))
     } else {
-        if (!is.double(cellIntensities)) storage.mode(medianIntensities) <- "double"
-        rownames(medianIntensities) <- NULL
+        if (!is.double(cellIntensities)) storage.mode(intensities) <- "double"
+        rownames(intensities) <- NULL
     }
 
     new("cyData", markerData=markerData, cellIntensities=cellIntensities, 
-        cellData=cellData, medianIntensities=medianIntensities, se)
+        cellData=cellData, intensities=intensities, se)
 }
 
 #############################################
 # Subsetting, as the SE class doesn't use extractROWS or replaceROWs.
 
 setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
-    if (!missing(i)) { x@medianIntensities <- x@medianIntensities[i,,drop=FALSE] }
+    if (!missing(i)) { x@intensities <- x@intensities[i,,drop=FALSE] }
     callNextMethod()
 })
 
@@ -98,15 +98,15 @@ setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
     if (!identical(x@cellIntensities, y@cellIntensities)) {
         stop("'cellIntensities' are not identical")
     }
-    if (check.medians && !identical(x@medianIntensities, y@medianIntensities)) {
-        stop("'medianIntensities' are not identical")
+    if (check.medians && !identical(x@intensities, y@intensities)) {
+        stop("'intensities' are not identical")
     }
     return(TRUE)
 }
 
 setMethod("[<-", c("cyData", "ANY", "ANY", "cyData"), function(x, i, j, ..., value) {
     .check_identical_refdata(x, value, check.medians=FALSE)
-    if (!missing(i)) { x@medianIntensities[i,] <- value@medianIntensities }
+    if (!missing(i)) { x@intensities[i,] <- value@intensities }
     callNextMethod(x=x, i=i, j=j, ..., value=value)
 })
 
@@ -147,12 +147,12 @@ setReplaceMethod("cellData", "cyData", function(x, value){
     return(x)
 })
 
-setGeneric("medianIntensities", function(x) standardGeneric("medianIntensities"))
-setMethod("medianIntensities", "cyData", function(x) x@medianIntensities)
+setGeneric("intensities", function(x) standardGeneric("intensities"))
+setMethod("intensities", "cyData", function(x) x@intensities)
 
-setGeneric("medianIntensities<-", function(x, value) standardGeneric("medianIntensities<-"))
-setReplaceMethod("medianIntensities", "cyData", function(x, value){
-    x@medianIntensities <- value
+setGeneric("intensities<-", function(x, value) standardGeneric("intensities<-"))
+setReplaceMethod("intensities", "cyData", function(x, value){
+    x@intensities <- value
     validObject(x)
     return(x)
 })
@@ -174,7 +174,7 @@ setMethod("cbind", "cyData", function(..., deparse.level=1) {
     }
     
     base <- do.call(cbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new("cyData", base, medianIntensities=ref@medianIntensities, cellData=ref@cellData,
+    new("cyData", base, intensities=ref@intensities, cellData=ref@cellData,
         cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
@@ -186,8 +186,8 @@ setMethod("rbind", "cyData", function(..., deparse.level=1) {
     }
 
     base <- do.call(rbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new.meds <- do.call(rbind, lapply(args, medianIntensities))
-    new("cyData", base, medianIntensities=new.meds, cellData=ref@cellData,
+    new.meds <- do.call(rbind, lapply(args, intensities))
+    new("cyData", base, intensities=new.meds, cellData=ref@cellData,
         cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 

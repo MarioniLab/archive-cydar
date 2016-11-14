@@ -5,7 +5,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, num.per.row=6, plot.h
 # created 1 November 2016    
 # last modified 14 November 2016
 {
-    coords <- medianIntensities(x)
+    coords <- intensities(x)
     nrows <- ceiling(ncol(coords)/num.per.row)
     plot.height <- plot.height*nrows
     collim <- intensityRanges(x, p=p)
