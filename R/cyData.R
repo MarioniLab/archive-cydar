@@ -68,7 +68,7 @@ cyData <- function(markerData, medianIntensities=NULL, cellIntensities=NULL, cel
     }
 
     if (is.null(assays)) {
-        assays <- matrix(0L, 0, ncol(markerData))
+        assays <- matrix(0L, 0, 0)
     }
     se <- SummarizedExperiment(assays, ...)
 

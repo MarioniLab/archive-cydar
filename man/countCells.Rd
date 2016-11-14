@@ -8,12 +8,11 @@ Count the number of cells from each sample lying inside hyperspheres in high-dim
 }
 
 \usage{
-countCells(cell.data, tol=0.5, BPPARAM=bpparam(), 
-    downsample=10, filter=10, naive=FALSE)
+countCells(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, naive=FALSE)
 }
 
 \arguments{
-\item{cell.data}{A matrix of marker intensities per cell produced by \code{\link{prepareCellData}}.}
+\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius.}
 \item{BPPARAM}{A BiocParallelParam object specifying how parallelization is to be performed.}
 \item{downsample}{An integer scalar specifying the frequency with which cells are sampled to form hyperspheres.}
@@ -56,13 +55,16 @@ Neither this or \code{naive} will not affect the final results, only the speed w
 }
 
 \value{
-A list with named elements:
+A cyData object containing the following information:
 \describe{
-\item{\code{counts}:}{An integer matrix of counts for each hypersphere (row) and sample (column).}
-\item{\code{coordinates}:}{A numeric matrix of median marker intensities for each hypersphere (row) and marker (column).}
-\item{\code{totals}:}{An integer vector specifying the total number of cells in each sample.}
-\item{\code{tolerance}:}{An integer scalar equal to \code{tol}.}
+\item{\code{counts}}{An integer matrix of counts for each hypersphere (row) and sample (column) in the \code{Assays} slot.}
+\item{\code{medianIntensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{medianIntensities} slot.}
+\item{\code{totals}:}{An integer vector specifying the total number of cells in each sample, stored as a field in the \code{colData} slot.}
+\item{\code{tol}:}{An integer scalar equal to \code{tol}, stored in the \code{metadata} slot.}
+\item{\code{center.cell}:}{An integer vector specifying the column of \code{cellIntensities} containing the centre of each hypersphere, stored as a field in the \code{rowData} slot.}
 }
+Any existing \code{rowData}, \code{medianIntensities} and \code{assays} are discarded.
+All other slots are left unchanged from the values supplied in \code{x}.
 }
 
 \author{
@@ -88,6 +90,6 @@ cnt <- countCells(cd, filter=1, downsample=downsample, tol=tol)
 cnt2 <- countCells(cd, filter=1, downsample=downsample, tol=tol, naive=TRUE)
 
 # Checking that they're all the same.
-stopifnot(identical(cnt$counts, cnt2$counts))
-stopifnot(all.equal(cnt$coordinates, cnt2$coordinates))
+stopifnot(identical(assay(cnt), assay(cnt2)))
+stopifnot(all.equal(medianIntensities(cnt), medianIntensities(cnt2)))
 }

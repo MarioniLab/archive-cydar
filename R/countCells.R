@@ -1,4 +1,4 @@
-countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, naive=FALSE)
+countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, naive=FALSE)
 # Extracts counts for each cell in a CyTOF experiment, based on the number of surrounding cells 
 # from each sample, given a prepared set of expression values for all cells in each sample.
 #
@@ -6,19 +6,19 @@ countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, fil
 # created 21 April 2016
 # last modified 11 August 2016
 {
-    .check_cell_data(cell.data)
-    sample.id <- attributes(cell.data)$sample.id
-    cell.id <- attributes(cell.data)$cell.id
+    .check_cell_data(x)
+    sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
+    cell.id <- cellData(x)$cell.id - 1L
     if (naive) {
         cluster.centers <- cluster.info <- NULL
     } else {
-        cluster.centers <- attributes(cell.data)$cluster.centers
-        cluster.info <- attributes(cell.data)$cluster.info
+        cluster.centers <- metadata(x)$cluster.centers
+        cluster.info <- metadata(x)$cluster.info
     }
-    samples <- attributes(cell.data)$samples
+    samples <- colnames(x)
 
     # Scaling the distance by the number of parameters. 
-    markers <- attributes(cell.data)$markers
+    markers <- rownames(markerData(x))
     nmarkers <- length(markers)
     distance <- tol * sqrt(nmarkers) 
     if (distance <= 0) {
@@ -34,31 +34,39 @@ countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, fil
     allocations <- split(chosen, core.assign)
 
     # Parallel analysis.
-    out <- bplapply(allocations, FUN=.recount_cells, exprs=cell.data, nsamples=length(samples), 
+    out <- bplapply(allocations, FUN=.recount_cells, exprs=cellIntensities(x), nsamples=length(samples), 
                     sample.id=sample.id, distance=distance, cluster.centers=cluster.centers, 
                     cluster.info=cluster.info, filter=filter, BPPARAM=BPPARAM)
 
     # Assembling output into a coherent set.
-    out.counts <- out.coords <- list()
+    out.counts <- out.coords <- out.index <- list()
     for (i in seq_along(out)) {
         if (is.character(out[[i]])) { stop(out[[i]]) }
         out.counts[[i]] <- out[[i]]$counts
         out.coords[[i]] <- out[[i]]$coords
+        out.index[[i]] <- out[[i]]$index
     }
 
     out.counts <- do.call(rbind, out.counts)
     colnames(out.counts) <- samples
     out.coords <- do.call(rbind, out.coords)
     colnames(out.coords) <- markers
+    out.index <- unlist(out.index, use.names=FALSE)
 
     # Ordering them (not strictly necessary, just for historical reasons).
-    i <- as.integer(sub("^c", "", rownames(out.counts))) 
-    o <- order(sample.id[i], cell.id[i])
+    o <- order(sample.id[out.index], cell.id[out.index])
     out.counts <- out.counts[o,,drop=FALSE]
+    rownames(out.counts) <- seq_along(o)
     out.coords <- out.coords[o,,drop=FALSE]
+    out.index <- out.index[o]
 
     all.ncells <- tabulate(sample.id+1L, length(samples))
-    return(list(counts=out.counts, coordinates=out.coords, totals=all.ncells, tolerance=tol))
+    output <- new("cyData", x, assays=Assays(list(counts=out.counts)), 
+                  medianIntensities=out.coords, 
+                  elementMetadata=DataFrame(center.cell=out.index)) 
+    output$totals <- all.ncells
+    metadata(output)$tol <- tol
+    return(output)
 }
 
 .recount_cells <- function(curcells, exprs, nsamples, sample.id, distance, cluster.centers, cluster.info, filter) 
@@ -71,8 +79,8 @@ countCells <- function(cell.data, tol=0.5, BPPARAM=bpparam(), downsample=10, fil
         keep <- rowSums(counts) >= filter
         counts <- counts[keep,,drop=FALSE]
         coords <- coords[keep,,drop=FALSE]
-        if (any(keep)) { rownames(counts) <- rownames(coords) <- paste0("c", curcells[keep] + 1L) }
-        return(list(counts=counts, coords=coords))
+        index <- curcells[keep] + 1L
+        return(list(counts=counts, coords=coords, index=index))
     }
     return(out)
 }

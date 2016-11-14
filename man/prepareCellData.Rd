@@ -23,21 +23,19 @@ Intensity matrices from several samples are also merged into a single matrix for
 }
 
 \value{
-A numeric matrix where rows represent markers and columns represent cells (but not necessarily in the same order as the input cells in \code{x}).
-Contiguous column-wise chunks of this matrix contain cells from the same cluster.
-This matrix also contains several attributes:
-\describe{
-\item{\code{markers}:}{A character vector containing the marker names.}
-\item{\code{samples}:}{A character vector containing the sample names.}
-\item{\code{sample.id}:}{An integer vector specifying the sample matrix of \code{x} that each cell was taken from (zero indexed).}
-\item{\code{cell.id}:}{An integer vector specifying the index of each cell in its original matrix (zero indexed).}
-\item{\code{cluster.centers}:}{A numeric vector containing the centre coordinates of each cluster (column) for each marker (row).}
-\item{\code{cluster.info}:}{A list containing information for each cluster.
-Each element is a list, containing the zero-indexed column index of the output matrix that specifies the first cell in the cluster;
-    and a numeric vector of distances between each cell in the cluster and the cluster centre.
-Cells in the output matrix are ordered to correspond to the distances, in a manner such that the distances are increasing.
+A cyData object with marker intensities for each cell stored in the \code{cellIntensities} slot.
+In addition:
+\itemize{
+\item Marker names are stored as the row names of the \code{markerData} slot.
+\item Sample names are stored as the column names of the output object.
+\item \code{cellData} contains \code{sample.id}, an integer vector specifying the sample matrix of \code{x} that each cell was taken from;
+    and \code{cell.id}, an integer vector specifying the index of each cell in its original matrix.
+\item The metadata contains \code{cluster.centers}, a numeric matrix containing the centre coordinates of each cluster (column) for each marker (row);
+    and \code{cluster.info}, a list containing information for each cluster.
 }
-}
+Each element of \code{cluster.info} is a list, containing the zero-indexed column index of the output matrix that specifies the first cell in the cluster;
+    as well as a numeric vector of distances between each cell in the cluster and the cluster centre.
+Cells in \code{cellIntensities} are arranged in blocks corresponding to the clusters and ordered such that the distances are increasing.
 }
 
 \author{
@@ -60,8 +58,7 @@ for (i in sample.names) {
 
 ### Running the function: ###
 cd <- prepareCellData(x)
-dim(cd)
-names(attributes(cd))
+cd
 }
 
 \seealso{

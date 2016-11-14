@@ -10,8 +10,8 @@ prepareCellData <- function(x, ...)
     exprs.list <- cell.data$exprs
 
     exprs <- do.call(rbind, exprs.list)
-    sample.id <- rep(seq_along(exprs.list) - 1L, sapply(exprs.list, nrow))
-    cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } )) - 1L
+    sample.id <- rep(seq_along(exprs.list), sapply(exprs.list, nrow))
+    cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } ))
 
     # K-means clustering.
     N <- ceiling(sqrt(nrow(exprs)))
@@ -44,38 +44,28 @@ prepareCellData <- function(x, ...)
     }
   
     # Collating the output. 
-    output <- do.call(cbind, new.exprs)
-    attributes(output)$markers <- cell.data$markers
-    attributes(output)$samples <- cell.data$samples
-    attributes(output)$sample.id <- unlist(new.samples)
-    attributes(output)$cell.id <- unlist(new.cells)
-    attributes(output)$cluster.centers <- t(out$centers)
-    attributes(output)$cluster.info <- clust.info
-    return(output)
+    cyData(cellIntensities=do.call(cbind, new.exprs),
+           markerData=DataFrame(row.names=cell.data$markers),
+           colData=DataFrame(row.names=cell.data$samples),
+           cellData=DataFrame(sample.id=unlist(new.samples),
+                              cell.id=unlist(new.cells)),
+           assays=matrix(0L, 0, length(cell.data$samples)),
+           metadata=list(cluster.centers=t(out$centers),
+                         cluster.info=clust.info))
 }
 
-.check_cell_data <- function(cell.data) {
-    markers <- attributes(cell.data)$markers
-    stopifnot(length(markers)==nrow(cell.data))
+.check_cell_data <- function(x) {
+    sample.id <- cellData(x)$sample.id
+    stopifnot(all(sample.id > 0L & sample.id <= ncol(samples)))
 
-    samples <- attributes(cell.data)$samples
-    stopifnot(!is.null(samples))
+    cluster.centers <- metadata(x)$cluster.centers        
+    stopifnot(nrow(cluster.centers)==nmarkers(x))
     
-    sample.id <- attributes(cell.data)$sample.id
-    stopifnot(all(sample.id >= 0L & sample.id < length(samples)))
-    stopifnot(length(sample.id)==ncol(cell.data))
-
-    cell.id <- attributes(cell.data)$cell.id
-    stopifnot(length(cell.id)==ncol(cell.data))
-
-    cluster.centers <- attributes(cell.data)$cluster.centers        
-    stopifnot(nrow(cluster.centers)==nrow(cell.data))
-    
-    cluster.info <- attributes(cell.data)$cluster.info
+    cluster.info <- metadata(x)$cluster.info
     stopifnot(ncol(cluster.centers)==length(cluster.info))
-    for (x in cluster.info) {
-        stopifnot(!is.unsorted(x[[2]]))
-        stopifnot(x[[1]] >= 0L & x[[1]]+length(x[[2]]) <= ncol(cell.data))
+    for (clust in cluster.info) {
+        stopifnot(!is.unsorted(clust[[2]]))
+        stopifnot(clust[[1]] >= 0L & clust[[1]]+length(clust[[2]]) <= ncells(x))
     }
 
     invisible(NULL)

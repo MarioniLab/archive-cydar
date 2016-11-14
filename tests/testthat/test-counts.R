@@ -36,7 +36,7 @@ for (setup in 1:5) {
     suppressWarnings(cd <- prepareCellData(fs))
     out <- countCells(cd, filter=filter, downsample=downsample, tol=tol)
     out2 <- countCells(cd, filter=filter, downsample=downsample, tol=tol, naive=TRUE)
-    expect_identical(out, out2)
+    expect_equal(out, out2)
 
     # Reference counter.
     to.select1 <- seq_len(nrow(all.values1)) %% downsample == 1L
@@ -74,26 +74,26 @@ for (setup in 1:5) {
     keep <- rowSums(collected.counts) >= filter
     
     # Comparison.
-    colnames(collected.counts) <- names(fs)
-    rownames(collected.counts) <- paste0("c", match(c(paste0("0.", which(to.select1)-1L), paste0("1.", which(to.select2)-1L)),
-                                        paste0(attributes(cd)$sample.id, ".", attributes(cd)$cell.id)))
-    expect_identical(collected.counts[keep,,drop=FALSE], out$counts)
+    obs <- assay(out)
+    dimnames(obs) <- NULL
+    expect_identical(collected.counts[keep,,drop=FALSE], obs)
+    expect_identical(rowData(out)$center.cell, match(c(paste0("1.", which(to.select1)), paste0("2.", which(to.select2))),
+        paste0(cellData(cd)$sample.id, ".", cellData(cd)$cell.id)))
 
-    expect_identical(colnames(all.values1), colnames(out$coordinates))
-    expect_identical(rownames(collected.counts)[keep], rownames(out$coordinates))
+    med.coords <- medianIntensities(out)
     collected.meds.lower <- do.call(rbind, collected.meds.lower)[keep,,drop=FALSE]
     collected.meds.upper <- do.call(rbind, collected.meds.upper)[keep,,drop=FALSE]
-    expect_identical(dim(collected.meds.lower), dim(out$coordinates))
-    expect_identical(dim(collected.meds.upper), dim(out$coordinates))
-    out.of.range <- collected.meds.lower > out$coordinates | collected.meds.upper < out$coordinates
+    expect_identical(dim(collected.meds.lower), dim(med.coords))
+    expect_identical(dim(collected.meds.upper), dim(med.coords))
+    out.of.range <- collected.meds.lower > med.coords | collected.meds.upper < med.coords
     expect_true(!any(out.of.range))
 
-    expect_equal(tol, out$tolerance)
+    expect_equal(tol, metadata(out)$tol)
     expect_equal(c(ncells1, ncells2), out$totals)
 }
 
 # Running silly settings.
 suppressWarnings(out <- countCells(cd, filter=1L, tol=0))
-expect_true(all(rowSums(out$counts)==1L))
+expect_true(all(rowSums(assay(out))==1L))
 out <- countCells(cd, filter=Inf)
-expect_identical(nrow(out$counts), 0L)
+expect_identical(nrow(out), 0L)
