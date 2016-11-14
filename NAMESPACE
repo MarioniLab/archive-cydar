@@ -5,6 +5,7 @@ importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("glmnet", glmnet)
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
+importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-")
 
 importFrom("graphics", plot, points, lines, par, polygon)
 importFrom("shiny", 
@@ -17,6 +18,8 @@ exportClasses(cyData)
 
 exportMethods(nmarkers, 
     ncells,
+    markernames, "markernames<-",
+    sampleNames, "sampleNames<-",
     markerData, "markerData<-",
     intensities, "intensities<-",
     cellIntensities, "cellIntensities<-",

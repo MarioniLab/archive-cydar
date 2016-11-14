@@ -5,6 +5,15 @@
 \alias{ncells}
 \alias{ncells,cyData-method}
 
+\alias{markernames}
+\alias{markernames,cyData-method}
+\alias{markernames<-}
+\alias{markernames<-,cyData-method}
+\alias{sampleNames}
+\alias{sampleNames,cyData-method}
+\alias{sampleNames<-}
+\alias{sampleNames<-,cyData-method}
+
 \alias{markerData}
 \alias{markerData,cyData-method}
 \alias{markerData<-}
@@ -40,21 +49,36 @@
 
 \S4method{nmarkers}{cyData}(x)
 \S4method{ncells}{cyData}(x)
+
+\S4method{markernames}{cyData}(object)
+\S4method{markernames}{cyData}(object) <- value
+
+\S4method{sampleNames}{cyData}(object)
+\S4method{sampleNames}{cyData}(object) <- value
 }
 
 \arguments{
-\item{x}{A cyData object.}
-\item{value}{An object to use to replace the appropriate field in \code{x}}
+\item{x, object}{A cyData object.}
+\item{value}{
+For \code{markernames} and \code{sampleNames}, a character vector specifying the names of the markers and samples, respectively.
+Otherwise, an appropriate object to use to replace the corresponding slot of \code{x}.
+}
 }
 
 \details{
-These are methods to get or set the slots in a cyData object. 
+\code{markerData}, \code{intensities}, \code{cellIntensities} and \code{cellData} are methods to get or set the slots in a cyData object. 
 Some caution is advised when using \code{cellIntensities<-} and/or \code{cellData<-}, as several methods in this package rely on a particular ordering of cells.
+
+Several convenience functions are also provided.
+\code{nmarkers} will return the number of markers, while \code{ncells} will return the number of cells.
+\code{markernames} will return the marker names (i.e., the row names of \code{markerData}), while \code{sampleNames} will return the sample names (i.e., the column names of \code{object}).
+The respective replacement functions will modify these names.
 }
 
 \value{
-\code{nmarkers} will return the number of markers, while \code{ncells} will return the number of cells.
-Each other method will get or set the named slot.
+For the setters, a new cyData object will be generated with modified entries for the appropriate slots.
+For the getters, an object of the class corresponding to each slot will be returned.
+\code{nmarkers} and \code{ncells} will return integer scalars, while \code{markerNames} and \code{sampleNames} will return character vectors.
 }
 
 \author{
@@ -65,6 +89,9 @@ Aaron Lun
 example(cyData) # Mocking up an object.
 
 nmarkers(cyd)
+markernames(cyd)
+sampleNames(cyd)
+
 markerData(cyd)
 markerData(cyd)$stuff <- runif(nmarkers(cyd))
 markerData(cyd)

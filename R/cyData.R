@@ -60,7 +60,7 @@ cyData <- function(markerData, intensities=NULL, cellIntensities=NULL, cellData=
         cellIntensities <- matrix(0, nrow(markerData), 0)
     } else {
         if (!is.double(cellIntensities)) storage.mode(cellIntensities) <- "double"
-        rownames(cellIntensities) <- NULL
+        dimnames(cellIntensities) <- NULL
     }
 
     if (is.null(cellData)) {
@@ -76,7 +76,7 @@ cyData <- function(markerData, intensities=NULL, cellIntensities=NULL, cellData=
         intensities <- matrix(0, nrow(assays), nrow(markerData))
     } else {
         if (!is.double(cellIntensities)) storage.mode(intensities) <- "double"
-        rownames(intensities) <- NULL
+        dimnames(intensities) <- NULL
     }
 
     new("cyData", markerData=markerData, cellIntensities=cellIntensities, 
@@ -128,11 +128,17 @@ setReplaceMethod("markerData", "cyData", function(x, value){
 })
 
 setGeneric("cellIntensities", function(x) standardGeneric("cellIntensities"))
-setMethod("cellIntensities", "cyData", function(x) x@cellIntensities)
+setMethod("cellIntensities", "cyData", function(x) {
+    out <- x@cellIntensities
+    rownames(out) <- rownames(x@markerData)
+    colnames(out) <- rownames(x@cellData)
+    return(out)
+})
 
 setGeneric("cellIntensities<-", function(x, value) standardGeneric("cellIntensities<-"))
 setReplaceMethod("cellIntensities", "cyData", function(x, value){
     x@cellIntensities <- value
+    dimnames(x@cellIntensities) <- NULL
     validObject(x)
     return(x)
 })
@@ -148,11 +154,17 @@ setReplaceMethod("cellData", "cyData", function(x, value){
 })
 
 setGeneric("intensities", function(x) standardGeneric("intensities"))
-setMethod("intensities", "cyData", function(x) x@intensities)
+setMethod("intensities", "cyData", function(x) {
+    out <- x@intensities
+    rownames(out) <- rownames(x)
+    colnames(out) <- rownames(x@markerData)
+    return(out)
+})
 
 setGeneric("intensities<-", function(x, value) standardGeneric("intensities<-"))
 setReplaceMethod("intensities", "cyData", function(x, value){
     x@intensities <- value
+    dimnames(x@intensities) <- NULL
     validObject(x)
     return(x)
 })
@@ -162,6 +174,24 @@ setMethod("nmarkers", "cyData", function(x) nrow(x@markerData))
 
 setGeneric("ncells", function(x) standardGeneric("ncells"))
 setMethod("ncells", "cyData", function(x) ncol(x@cellIntensities))
+
+setMethod("markernames", "cyData", function(object) {
+    return(rownames(object@markerData))          
+})
+
+setReplaceMethod("markernames", "cyData", function(object, value) {
+    rownames(object@markerData) <- value
+    return(object) 
+})
+
+setMethod("sampleNames", "cyData", function(object) {
+    return(colnames(object))          
+})
+
+setReplaceMethod("sampleNames", "cyData", function(object, value) {
+    colnames(object) <- value
+    return(object) 
+})
 
 #############################################
 # Combining objects.
@@ -186,7 +216,7 @@ setMethod("rbind", "cyData", function(..., deparse.level=1) {
     }
 
     base <- do.call(rbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new.meds <- do.call(rbind, lapply(args, intensities))
+    new.meds <- do.call(rbind, lapply(args, slot, name="intensities"))
     new("cyData", base, intensities=new.meds, cellData=ref@cellData,
         cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
