@@ -9,10 +9,12 @@
 \alias{markernames,cyData-method}
 \alias{markernames<-}
 \alias{markernames<-,cyData-method}
+\alias{markernames<-,cyData,ANY-method}
 \alias{sampleNames}
 \alias{sampleNames,cyData-method}
 \alias{sampleNames<-}
 \alias{sampleNames<-,cyData-method}
+\alias{sampleNames<-,cyData,ANY-method}
 
 \alias{markerData}
 \alias{markerData,cyData-method}

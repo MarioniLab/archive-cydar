@@ -24,19 +24,14 @@ pickBestMarkers <- function(x, chosen, downsample=10, p=0.05, naive=FALSE)
 
     # Organizing the hypersphere centers. 
     index <- rowData(x)$center.cell[chosen]
-    coords <- cellIntensities(x)[,index,drop=FALSE]
-    if (naive) {
-        cluster.centers <- cluster.info <- NULL 
-    } else {
-        rownames(coords) <- markers
-        x.central <- prepareCellData(list(A=t(coords)))
-        coords <- cellIntensities(x.central)
-        cluster.centers <- metadata(x.central)$cluster.centers
-        cluster.info <- metadata(x.central)$cluster.info
-    }
+    coords <- t(cellIntensities(x)[,index,drop=FALSE])
+    x.central <- prepareCellData(list(A=coords), naive=naive)
+    new.coords <- cellIntensities(x.central)
+    cluster.centers <- metadata(x.central)$cluster.centers
+    cluster.info <- metadata(x.central)$cluster.info
 
     # Selecting the centers.
-    was.counted <- .Call(cxx_find_counted, coords, cluster.centers, cluster.info, selected, distance)
+    was.counted <- .Call(cxx_find_counted, new.coords, cluster.centers, cluster.info, selected, distance)
     if (is.character(was.counted)) {
         stop(was.counted)
     }

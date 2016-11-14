@@ -179,7 +179,7 @@ setMethod("markernames", "cyData", function(object) {
     return(rownames(object@markerData))          
 })
 
-setReplaceMethod("markernames", "cyData", function(object, value) {
+setReplaceMethod("markernames", c("cyData", "ANY"), function(object, value) {
     rownames(object@markerData) <- value
     return(object) 
 })
@@ -188,7 +188,7 @@ setMethod("sampleNames", "cyData", function(object) {
     return(colnames(object))          
 })
 
-setReplaceMethod("sampleNames", "cyData", function(object, value) {
+setReplaceMethod("sampleNames", c("cyData", "ANY"), function(object, value) {
     colnames(object) <- value
     return(object) 
 })

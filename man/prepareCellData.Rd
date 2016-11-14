@@ -6,20 +6,25 @@
 \description{Convert single-cell marker intensities from a mass cytometry experiment into a format for efficient counting.}
 
 \usage{
-prepareCellData(x, ...)
+prepareCellData(x, naive=FALSE, ...)
 }
 
 \arguments{
 \item{x}{A named list of numeric matrices, where each matrix corresponds to a sample and contains expression intensities for each cell (row) and each marker (column).
 Alternatively, a ncdfFlowSet object containing the same information.}
+\item{naive}{A logical scalar specifying whether k-means clustering should be performed.}
 \item{...}{Additional arguments to pass to \code{\link{kmeans}}.}
 }
 
 \details{
-This function performs k-means clustering on all the cells based on their marker intensities.
+This function constructs a cyData object from the marker intensities of each cell in one or more samples.
+
+If \code{naive=FALSE}, this function performs k-means clustering on all the cells based on their marker intensities.
 The number of clusters is set to the square-root of the total number of cells.
 The cluster centres and cell assignments are then stored for later use in speeding up high-dimensional searches.
 Intensity matrices from several samples are also merged into a single matrix for greater efficiency.
+
+Note that \code{naive} does \emph{not} change the results of downstream functions, only the computational algorithm with which they are obtained.
 }
 
 \value{
@@ -28,9 +33,9 @@ In addition:
 \itemize{
 \item Marker names are stored as the row names of the \code{markerData} slot.
 \item Sample names are stored as the column names of the output object.
-\item \code{cellData} contains \code{sample.id}, an integer vector specifying the sample matrix of \code{x} that each cell was taken from;
-    and \code{cell.id}, an integer vector specifying the index of each cell in its original matrix.
-\item The metadata contains \code{cluster.centers}, a numeric matrix containing the centre coordinates of each cluster (column) for each marker (row);
+\item \code{cellData} contains \code{sample.id}, an integer vector specifying the element of \code{x} that each cell was taken from;
+    and \code{cell.id}, an integer vector specifying the row index of each cell in its original matrix.
+\item If \code{naive=FALSE}, the metadata contains \code{cluster.centers}, a numeric matrix containing the centre coordinates of each cluster (column) for each marker (row);
     and \code{cluster.info}, a list containing information for each cluster.
 }
 Each element of \code{cluster.info} is a list, containing the zero-indexed column index of the output matrix that specifies the first cell in the cluster;

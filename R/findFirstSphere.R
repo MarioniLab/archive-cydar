@@ -22,18 +22,12 @@ findFirstSphere <- function(coords, pvalues, threshold=1, block=NULL, naive=FALS
         return(total.out)
     }
 
-    if (naive) { 
-        new.coords <- t(coords)
-        cluster.centers <- cluster.info <- NULL
-        hyper.ids <- seq_len(nrow(coords))
-    } else {
-        colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
-        converted <- prepareCellData(list(X=coords))
-        cluster.centers <- metadata(converted)$cluster.centers
-        cluster.info <- metadata(converted)$cluster.info
-        new.coords <- cellIntensities(converted)
-        hyper.ids <- cellData(converted)$cell.id
-    }
+    colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
+    converted <- prepareCellData(list(X=coords), naive=naive)
+    cluster.centers <- metadata(converted)$cluster.centers
+    cluster.info <- metadata(converted)$cluster.info
+    new.coords <- cellIntensities(converted)
+    hyper.ids <- cellData(converted)$cell.id
 
     # Checking for non-redundancy.
     threshold <- as.double(threshold)

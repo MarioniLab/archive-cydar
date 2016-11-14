@@ -1,4 +1,4 @@
-prepareCellData <- function(x, ...) 
+prepareCellData <- function(x, naive=FALSE, ...) 
 # Converts it into a format more suitable for high-speed analysis.
 # Also does k-means clustering to generate the necessary clusters.
 #
@@ -15,8 +15,9 @@ prepareCellData <- function(x, ...)
 
     exprs <- do.call(rbind, exprs.list)
     sample.id <- rep(seq_along(exprs.list), sapply(exprs.list, nrow))
-    cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } ))
+    cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } ), use.names=FALSE)
 
+if (!naive) {
     # K-means clustering.
     N <- ceiling(sqrt(nrow(exprs)))
     tryCatch({
@@ -46,16 +47,23 @@ prepareCellData <- function(x, ...)
         clust.info[[clust]] <- list(accumulated, cur.dist)
         accumulated <- accumulated + length(o)
     }
+
+    all.exprs <- do.call(cbind, new.exprs)
+    metadata <- list(cluster.centers=t(out$centers), cluster.info=clust.info)
+    sample.id <- unlist(new.samples)
+    cell.id <- unlist(new.cells)
+} else {
+    all.exprs <- t(exprs)
+    metadata <- list()
+} 
   
     # Collating the output. 
-    cyData(cellIntensities=do.call(cbind, new.exprs),
+    cyData(cellIntensities=all.exprs,
            markerData=DataFrame(row.names=cell.data$markers),
            colData=DataFrame(row.names=cell.data$samples),
-           cellData=DataFrame(sample.id=unlist(new.samples),
-                              cell.id=unlist(new.cells)),
            assays=matrix(0L, 0, length(cell.data$samples)),
-           metadata=list(cluster.centers=t(out$centers),
-                         cluster.info=clust.info))
+           cellData=DataFrame(sample.id=sample.id, cell.id=cell.id),
+           metadata=metadata)
 }
 
 .check_cell_data <- function(x) {

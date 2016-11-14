@@ -8,18 +8,12 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 # last modified 11 August 2016
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
-    if (naive) {
-        new.coords <- t(coords)
-        cluster.centers <- cluster.info <- NULL
-        hyper.ids <- seq_len(nrow(coords))
-    } else {
-        colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
-        converted <- prepareCellData(list(X=coords))
-        new.coords <- cellIntensities(converted)
-        cluster.centers <- metadata(converted)$cluster.centers
-        cluster.info <- metadata(converted)$cluster.info
-        hyper.ids <- cellData(converted)$cell.id
-    }
+    colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
+    converted <- prepareCellData(list(X=coords), naive=naive)
+    new.coords <- cellIntensities(converted)
+    cluster.centers <- metadata(converted)$cluster.centers
+    cluster.info <- metadata(converted)$cluster.info
+    hyper.ids <- cellData(converted)$cell.id
 
     if (is.null(bandwidth)) { 
         neighbors <- as.integer(neighbors)
