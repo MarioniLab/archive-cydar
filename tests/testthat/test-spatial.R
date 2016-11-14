@@ -12,7 +12,7 @@ suppressWarnings(cd <- prepareCellData(list(A=coords)))
 for (nn in c(10L, 20L, 50L)) { 
     # Testing the nearest neighbour machinery.
     ci <- cellIntensities(cd)
-    allbands <- .Call("get_knn_distance", ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, nn)
+    allbands <- .Call(cydar:::cxx_get_knn_distance, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, nn)
     
     refdist <- as.matrix(dist(t(ci)))
     refbands <- apply(refdist, 1, function(x) { sort(x)[nn] })
@@ -21,7 +21,7 @@ for (nn in c(10L, 20L, 50L)) {
 
     # This tests the density calculation machinery.
     bandwidth <- median(refbands)
-    densities <- .Call("compute_density", ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, bandwidth)
+    densities <- .Call(cydar:::cxx_compute_density, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, bandwidth)
 
     weightmat <- 1 - (refdist/bandwidth)^3
     weightmat[weightmat < 0] <- 0

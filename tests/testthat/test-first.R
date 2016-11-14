@@ -4,20 +4,12 @@ require(cydar); require(testthat)
 set.seed(400)
 nhypers <- 1000
 
-for (scenario in 1:4) {
-    nmarkers <- 10
-    block <- sample(3, nhypers, replace=TRUE)
-    if (scenario==2L) {
-        block <- NULL
-    } else if (scenario==3L) {
-        nmarkers <- 20
-    } else if (scenario==4L) {
-        nmarkers <- 30
-    }
+for (nmarkers in c(10, 20, 30)) {
     coords <- matrix(rnorm(nhypers*nmarkers, sd=1), nrow=nhypers, ncol=nmarkers)
     pval <- rbeta(nhypers, 1, 10)
     tcoords <- t(coords)
     o <- order(pval) 
+    block <- sample(3, nhypers, replace=TRUE)
     
     for (threshold in c(0.5, 1, 2)) {
         xkeep <- findFirstSphere(coords, pvalues=pval, threshold=threshold)

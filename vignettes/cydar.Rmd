@@ -14,13 +14,13 @@ BiocStyle::markdown()
 ```
 
 ```{r setup, echo=FALSE, message=FALSE}
-library(cyder)
+library(cydar)
 register(SerialParam())
 set.seed(100)
 ```
 
 # Detecting differentially abundant subpopulations in mass cytometry data
-Package: `r Rpackage("cyder")` <br />
+Package: `r Rpackage("cydar")` <br />
 Author: Aaron Lun (alun@wehi.edu.au) <br />
 Compilation date: `r Sys.Date()`
 
@@ -87,20 +87,25 @@ names(collected.exprs) <- paste0("Sample", seq_along(conditions))
 
 We quantify abundance by assigning cells to hyperspheres in the high-dimensional marker space, and counting the number of cells from each sample in each hypersphere.
 To do this, we first convert the intensity data into a format that is more amenable for counting.
-This works with either a list of matrices, or directly with a `ncdfFlowSet` object.
+The `prepareCellData` function works with either a list of matrices or directly with a `ncdfFlowSet` object, and generates a `cyData` object containing the reformatted intensities.
 
 ```{r}
 cd <- prepareCellData(collected.exprs)
 ```
 
-We then assign cells to hyperspheres.
-Each hypersphere is centred at a cell, in order to restrict ourselves to non-empty hyperspheres, and has radius equal to 0.5 times the square root of the number of markers.
+We then assign cells to hyperspheres using the `countCells` function.
+Each hypersphere is centred at a cell to restrict ourselves to non-empty hyperspheres, and has radius equal to 0.5 times the square root of the number of markers.
 The square root function adjusts for increased sparsity of the data at higher dimensions, while the 0.5 scaling factor allows cells with 10-fold differences in marker intensity (due to biological variability or technical noise) to be counted into the same hypersphere.
-The reported count matrix contains the set of counts for each hypersphere (row) from each sample (column).
 
 ```{r}
-out <- countCells(cd, tol=0.5)
-head(out$counts)
+cd <- countCells(cd, tol=0.5)
+```
+
+The output is another `cyData` object with extra information added to various fields.
+In particular, the reported count matrix contains the set of counts for each hypersphere (row) from each sample (column).
+
+```{r}
+head(assay(cd))
 ```
 
 Also reported are the "positions" of the hyperspheres, defined for each marker as the median intensity for all cells assigned to each hypersphere.
@@ -108,12 +113,10 @@ This will be required later for interpretation, as the marker intensities are re
 Shown below is the position of the first hypersphere, represented by its set of median intensities across all markers.
 
 ```{r}
-out$coordinates[1,]
+medianIntensities(cd)
 ```
 
-Note that the name of each row in `out$counts` and `out$coordinates` indicates the cell in `cd` on which the hypersphere is centred.
-These should not be changed in the downstream analysis.
-There is also some light filtering in `countCells` to improve memory efficiency, which can be adjusted with the `filter` argument.
+There is some light filtering in `countCells` to improve memory efficiency, which can be adjusted with the `filter` argument.
 
 # Testing for significant differences in abundance
 
@@ -123,7 +126,7 @@ This allows us to model discrete count data with overdispersion due to biologica
 
 ```{r}
 library(edgeR)
-y <- DGEList(out$counts, lib.size=out$totals, genes=out$coordinates)
+y <- DGEList(assay(cd), lib.size=cd$totals)
 ```
 
 First, we do some filtering to remove low-abundance hyperspheres with average counts below 5.
@@ -131,7 +134,8 @@ These are mostly uninteresting as they do not provide enough evidence to reject 
 Removing them also reduces computational work and the severity of the multiple testing correction.
 
 ```{r}
-keep <- aveLogCPM(y) >= aveLogCPM(5, mean(out$totals))
+keep <- aveLogCPM(y) >= aveLogCPM(5, mean(cd$totals))
+cd <- cd[keep,]
 y <- y[keep,]
 ```
 
@@ -155,7 +159,7 @@ This refers to the FDR across areas of the high-dimensional space.
 We do this using the `spatialFDR` function, given the p-values and positions of all tested hyperspheres.
 
 ```{r}
-qvals <- spatialFDR(y$genes, res$table$PValue)
+qvals <- spatialFDR(medianIntensities(cd), res$table$PValue)
 ```
 
 Hyperspheres with significant differences in abundance are defined as those detected at a spatial FDR of, say, 5%.
@@ -174,8 +178,9 @@ To interpret the DA hyperspheres, we use dimensionality reduction to visualize t
 This is done here with PCA, though for more complex data sets, we suggest using something like `r CRANpkg("Rtsne")`.
 
 ```{r}
-res.diff <- res[is.sig,]
-coords <- prcomp(res.diff$genes)
+sig.coords <- medianIntensities(cd)[is.sig,]
+sig.res <- res$table[is.sig,]
+coords <- prcomp(sig.coords)
 ```
 
 Each DA hypersphere is represented as a point on the plot below, coloured according to its log-fold change between conditions.
@@ -183,7 +188,7 @@ We can see that we've recovered the two DA subpopulations that we put in at the 
 One subpopulation increases in abundance (red) while the other decreases (blue) in the second condition relative to the first.
 
 ```{r}
-plotCellLogFC(coords$x[,1], coords$x[,2], res.diff$table$logFC)
+plotCellLogFC(coords$x[,1], coords$x[,2], sig.res$logFC)
 ```
 
 This plot should be interpreted by examining the marker intensities, in order to determine what each area of the plot represents. 
@@ -193,9 +198,10 @@ Colours represent to the median marker intensities of each hypersphere, mapped o
 ```{r,fig.width=10,fig.height=12}
 par(mfrow=c(6,5), mar=c(2.1, 1.1, 3.1, 1.1))
 limits <- intensityRanges(cd, p=0.05)
-for (i in order(colnames(y$genes))) {
-    plotCellIntensity(coords$x[,1], coords$x[,2], res.diff$genes[,i],
-                      irange=limits[,i], main=colnames(res.diff$genes)[i])
+all.markers <- rownames(markerData(cd))
+for (i in order(all.markers)) { 
+    plotCellIntensity(coords$x[,1], coords$x[,2], sig.coords[,i],
+                      irange=limits[,i], main=all.markers[i])
 }
 ```
 
@@ -209,16 +215,7 @@ This can be used to construct a colour bar -- see `?plotCellLogFC` for more deta
 
 Users wanting to identify specific subpopulations may consider using the `selectorPlot` function from `r Biocpkg("scran")`.
 This provides an interactive framework by which hyperspheres can be selected and saved to a R session for further examination.
-
 The best markers that distinguish cells in one subpopulation from all others can also be identified using `pickBestMarkers`.
-For example, if we take all hyperspheres on one side of the PCA plot, we can obtain a ranking for all markers.
-This is useful when combined with `selectorPlot` to identify the distinctive markers for a subpopulation of interest.
-
-```{r}
-chosen <- rownames(res.diff)[coords$x[,1] > 0]
-bestm <- pickBestMarkers(cd, chosen)
-head(bestm)
-```
 
 # Session information
 

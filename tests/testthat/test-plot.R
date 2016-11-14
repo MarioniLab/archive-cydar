@@ -59,12 +59,13 @@ for (tol in c(0.3,0.4,0.5,0.6,0.7)) {
 
     # Standard calculation.
     distance <- tol*sqrt(nrow(restuff)) 
-    was.counted <- .Call("find_counted", cd, attributes(cd)$cluster.centers, attributes(cd)$cluster.info, restuff, distance)
+    ci <- cellIntensities(cd)
+    was.counted <- .Call(cydar:::cxx_find_counted, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, restuff, distance)
 
     # Reference calculation.
     is.okay <- logical(ncol(restuff))
     for (i in seq_len(ncol(restuff))){ 
-        all.distances <- sqrt(colSums((restuff[,i] - cd)^2))
+        all.distances <- sqrt(colSums((restuff[,i] - ci)^2))
         is.okay[i] <- any(all.distances <= distance)
     }
     expect_identical(is.okay, was.counted)
