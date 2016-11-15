@@ -7,7 +7,7 @@ expandRadius <- function(x, design=NULL, tol=0.5)
 # created 27 October 2016   
 # last modified 14 November 2016 
 {
-    .check_cell_data(x)
+    .check_cell_data(x, check.clusters=FALSE)
     ci <- cellIntensities(x)
     sample.id <- cellData(x)$sample.id
 

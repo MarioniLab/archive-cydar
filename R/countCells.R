@@ -6,7 +6,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 # created 21 April 2016
 # last modified 14 November 2016
 {
-    .check_cell_data(x)
+    .check_cell_data(x, check.clusters=!naive)
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
     cell.id <- cellData(x)$cell.id - 1L
     if (naive) {

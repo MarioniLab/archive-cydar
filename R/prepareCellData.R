@@ -66,18 +66,32 @@ if (!naive) {
            metadata=metadata)
 }
 
-.check_cell_data <- function(x) {
+.check_cell_data <- function(x, check.clusters=TRUE) {
     sample.id <- cellData(x)$sample.id
     stopifnot(all(sample.id > 0L & sample.id <= ncol(x)))
 
-    cluster.centers <- metadata(x)$cluster.centers        
-    stopifnot(nrow(cluster.centers)==nmarkers(x))
-    
-    cluster.info <- metadata(x)$cluster.info
-    stopifnot(ncol(cluster.centers)==length(cluster.info))
-    for (clust in cluster.info) {
-        stopifnot(!is.unsorted(clust[[2]]))
-        stopifnot(clust[[1]] >= 0L & clust[[1]]+length(clust[[2]]) <= ncells(x))
+    central.id <- rowData(x)$center.cell
+    if (!is.null(central.id)) { 
+        stopifnot(all(central.id > 0L & central.id <= ncells(x)))
+    }
+
+    if (check.clusters) {
+        cluster.centers <- metadata(x)$cluster.centers        
+        if (is.null(cluster.centers)) {
+            stop("'cluster.centers' must be defined for non-naive counting")
+        }
+        stopifnot(nrow(cluster.centers)==nmarkers(x))
+        
+        cluster.info <- metadata(x)$cluster.info
+        if (is.null(cluster.info)) {
+            stop("'cluster.info' must be defined for non-naive counting")
+        }
+        
+        stopifnot(ncol(cluster.centers)==length(cluster.info))
+        for (clust in cluster.info) {
+            stopifnot(!is.unsorted(clust[[2]]))
+            stopifnot(clust[[1]] >= 0L & clust[[1]]+length(clust[[2]]) <= ncells(x))
+        }
     }
 
     invisible(NULL)

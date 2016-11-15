@@ -5,7 +5,7 @@ neighborDistances <- function(x, neighbors=50, downsample=50, as.tol=TRUE, naive
 # created 7 July 2016
 # last modified 14 November 2016
 {
-    .check_cell_data(x)
+    .check_cell_data(x, check.clusters=!naive)
     markers <- rownames(markerData(x))
     if (naive) {
         cluster.centers <- cluster.info <- NULL

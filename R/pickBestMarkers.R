@@ -8,7 +8,7 @@ pickBestMarkers <- function(x, chosen, downsample=10, p=0.05, naive=FALSE)
 # created 10 June 2016
 # last modified 14 November 2016
 {
-    .check_cell_data(x)
+    .check_cell_data(x, check.clusters=FALSE)
     markers <- rownames(markerData(x))
     tol <- metadata(x)$tol
     if (is.null(tol)) { 
