@@ -66,7 +66,7 @@ colnames(ex) <- paste0("X", seq_len(nmarkers))
 cd <- prepareCellData(list(A=ex))
 cnt <- countCells(cd, filter=1L)
 
-# Selecting the first mocked-up subpopulations.
-selected <- rowData(cnt)$center.cell <= 1000
+# Selecting hyperspheres centred on cells in the first mocked-up subpopulation.
+selected <- cellData(cnt)$cell.id[rowData(cnt)$center.cell] <= 1000
 pickBestMarkers(cnt, selected)
 }
