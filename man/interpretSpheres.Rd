@@ -5,8 +5,8 @@
 \description{Launches a Shiny app to assist interpretation of hyperspheres.}
 
 \usage{
-interpretSpheres(x, markers=NULL, labels=NULL, num.per.row=6, plot.height=100, 
-    xlim=NULL, p=0.01, run=TRUE, ...)
+interpretSpheres(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6,
+    plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)
 }
 
 \arguments{
@@ -15,6 +15,7 @@ interpretSpheres(x, markers=NULL, labels=NULL, num.per.row=6, plot.height=100,
 If \code{NULL}, all markers are used in the order corresponding to the columns of \code{intensities(x)}.}
 \item{labels}{A character vector containing existing labels for the hyperspheres.
 This should be of length equal to the number of rows in \code{x}.}
+\item{metrics}{A dataframe containing metrics to be reported for each hypersphere, with number of rows equal to \code{x}.}
 \item{num.per.row}{An integer scalar specifying the number of plots per row.}
 \item{plot.height}{An integer scalar specifying the height of each plot in pixels.}
 \item{xlim}{A numeric vector of length two specifying the x-axis limits for all plots.
@@ -29,7 +30,7 @@ This function creates a Shiny app in which density plots are constructed for int
 For a given hypersphere, the median intensity is plotted as a red circle on top of the density plot for each marker.
 The area under the curve is highlighted using the \code{\link{viridis}} colour scheme, based on whether the median is relatively high or low compared to all of the cells.
 
-The idea is to allow users to inspect each hypersphere to quickly determine its biological meaning, based on the expression of particular markers.
+The idea is to allow users to inspect each hypersphere to quickly determine its biological meaning, based on the expression of particular markers and other statistics in \code{metrics}.
 For each hypersphere, the closest hyperspheres that have already been labelled are also shown, along with the Euclidean distances to their locations.
 This helps with the labelling process by identifying labels in the neighbouring space.
 
@@ -75,5 +76,10 @@ labels <- shiny::runApp(app)
 #Or directly running the app from the function.
 labels <- interpretSpheres(cnt)
 }
+
+# Doing it with metrics.
+N <- nrow(cnt)
+metrics <- data.frame(logFC=rnorm(N), PValue=runif(N))
+app <- interpretSpheres(cnt, metrics=metrics, run=FALSE)
 }
 

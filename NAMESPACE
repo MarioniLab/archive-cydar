@@ -11,7 +11,7 @@ importFrom("graphics", plot, points, lines, par, polygon)
 importFrom("shiny", 
         column, fluidPage, fluidRow, pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
         observeEvent, actionButton, textInput,
-        plotOutput, renderPlot, renderTable, tableOutput,
+        plotOutput, renderPlot, renderTable, tableOutput, htmlOutput, renderUI,
         shinyApp, stopApp, runApp)
 
 exportClasses(cyData)
