@@ -34,7 +34,8 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     allocations <- split(chosen, core.assign)
 
     # Parallel analysis.
-    out <- bplapply(allocations, FUN=.recount_cells, exprs=cellIntensities(x), nsamples=length(samples), 
+    ci <- cellIntensities(x)
+    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, nsamples=length(samples), 
                     sample.id=sample.id, distance=distance, cluster.centers=cluster.centers, 
                     cluster.info=cluster.info, filter=filter, BPPARAM=BPPARAM)
 

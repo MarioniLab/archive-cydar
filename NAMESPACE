@@ -7,11 +7,11 @@ importFrom("glmnet", glmnet)
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
 importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-")
 
-importFrom("graphics", plot, points, lines, par, polygon)
+importFrom("graphics", plot, points, lines, par, polygon, text)
 importFrom("shiny", 
         column, fluidPage, fluidRow, pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
         observeEvent, actionButton, textInput,
-        plotOutput, renderPlot, renderTable, tableOutput, htmlOutput, renderUI,
+        plotOutput, renderPlot, renderTable, tableOutput,
         shinyApp, stopApp, runApp)
 
 exportClasses(cyData)
