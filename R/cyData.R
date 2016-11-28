@@ -32,10 +32,6 @@ setValidity2("cyData", function(object) {
     return(TRUE)
 })
 
-setMethod("parallelSlotNames", "cyData", function(x) {
-    c("intensities", callNextMethod()) 
-})
-
 scat <- function(fmt, vals=character(), exdent=2, ...) {
     vals <- ifelse(nzchar(vals), vals, "''")
     lbls <- paste(S4Vectors:::selectSome(vals), collapse=" ")
@@ -98,6 +94,10 @@ cyData <- function(markerData, intensities=NULL, cellAssignments=NULL, cellInten
 
 setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
     if (!missing(i)) { 
+        if (is.character(i)) { 
+            fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
+            i <- SummarizedExperiment:::.SummarizedExperiment.charbound(i, rownames(x), fmt)
+        }
         x@intensities <- x@intensities[i,,drop=FALSE] 
         x@cellAssignments <- x@cellAssignments[i]
     }
@@ -122,10 +122,20 @@ setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
 }
 
 setMethod("[<-", c("cyData", "ANY", "ANY", "cyData"), function(x, i, j, ..., value) {
-    .check_identical_refdata(x, value, check.group.values=FALSE)
-    if (!missing(i)) { 
+    if (!missing(i)) {
+        if (is.character(i)) { 
+            fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
+            i <- SummarizedExperiment:::.SummarizedExperiment.charbound(i, rownames(x), fmt)
+        }
+        if (!missing(j)) { 
+            stop("simultaneous row/column replacement is not supported")
+        }
+        .check_identical_refdata(x, value, check.group.values=FALSE)
         x@intensities[i,] <- value@intensities 
         x@cellAssignments[i] <- value@cellAssignments
+    }
+    if (!missing(j)) { 
+        .check_identical_refdata(x, value, check.group.values=TRUE)
     }
     callNextMethod(x=x, i=i, j=j, ..., value=value)
 })

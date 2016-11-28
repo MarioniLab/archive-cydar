@@ -132,7 +132,11 @@ expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
 
 cyd.x <- cyd
-cyd.x[,by.col] <- cyd2[,by.col]
+expect_error(cyd.x[,by.col] <- cyd2[,by.col], "'intensities' are not identical") 
+cyd2.x <- cyData(counts2, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
+cyd.x$whee <- 1
+cyd2.x$whee <- 2
+cyd.x[,by.col] <- cyd2.x[,by.col]
 counts.x <- counts
 counts.x[,by.col] <- counts2[,by.col]
 expect_equivalent(counts.x, assay(cyd.x))
@@ -141,10 +145,14 @@ expect_equivalent(cell.assign, cellAssignments(cyd.x))
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
+whee.vals <- rep(1, ncol(cyd.x)) # checking that colData is replaced as expected.
+whee.vals[by.col] <- 2
+expect_identical(whee.vals, cyd.x$whee)
 
 cyd3 <- cyData(counts2, markerData=marker.data[rev(seq_len(nrow(marker.data))),], intensities=medians2, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
 expect_error(cyd.x[by.row,] <- cyd3[by.row,], "'markerData' are not identical")
 expect_error(cyd.x[,by.col] <- cyd3[,by.col], "'markerData' are not identical")
+expect_error(cyd.x[by.row,by.col] <- cyd.x[by.row,by.col], "simultaneous row/column replacement is not supported")
 
 # Running combiners.
 cyd.x <- cbind(cyd, cyd)

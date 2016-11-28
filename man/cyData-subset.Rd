@@ -55,6 +55,10 @@ Furthermore, for \code{cbind}, values of \code{intensities} should also be ident
 Note that \code{c} is a synonym for \code{rbind}.
 
 When replacing entries with \code{[<-}, \code{markerData}, \code{cellData} and \code{cellIntensities} should be identical in \code{x} and \code{value}.
+Column replacement also requires \code{intensities} and \code{cellAssignments} to be the same.
+Simultaneous row and column replacement is not allowed as this will introduce inconsistencies into the sample ID annotation.
+
+% Specifically, a column might be referring to one sample for some rows, and another sample for other rows.
 }
 
 \author{

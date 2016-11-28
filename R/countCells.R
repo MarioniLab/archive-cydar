@@ -70,6 +70,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     output <- new("cyData", x, assays=Assays(list(counts=out.counts)), 
                   intensities=out.coords, cellAssignments=out.cells,
                   elementMetadata=DataFrame(center.cell=out.index)) 
+    output$sample.id <- seq_len(ncol(output))
     output$totals <- all.ncells
     metadata(output)$tol <- tol
     return(output)

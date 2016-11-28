@@ -61,6 +61,8 @@ A cyData object containing the following information:
 \item{\code{intensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{intensities} slot.}
 \item{\code{cellAssignments}:}{A list of integer vectors specifying the cells belonging in each group.
 This is stored in a compressed format, see \code{\link{packIndices}} for details.}
+\item{\code{sample.id}:}{An integer vector containing an integer ID for each sample.
+This corresponds to values in \code{cellData(x)$sample.id}, to ensure that they can be properly interpreted regardless of column subsetting or combining.}
 \item{\code{totals}:}{An integer vector specifying the total number of cells in each sample, stored as a field in the \code{colData} slot.}
 \item{\code{tol}:}{An integer scalar equal to \code{tol}, stored in the \code{metadata} slot.}
 \item{\code{center.cell}:}{An integer vector specifying the column of \code{cellIntensities} containing the centre of each hypersphere, stored as a field in the \code{rowData} slot.}
