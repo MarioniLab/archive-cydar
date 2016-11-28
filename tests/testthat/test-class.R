@@ -8,21 +8,24 @@ medians <- matrix(rgamma(2000, 1, 1), ncol=20)
 cell.int <- matrix(rgamma(10000, 1, 1), nrow=20)
 cell.data <- DataFrame(sample.id=rep(1, 500))
 marker.data <- DataFrame(row.names=LETTERS[1:20])
+cell.assign <- rep(list(1), nrow(counts))
 
 # Checking constructor.
-cyd <- cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data)
-expect_error(cyData(counts[1:10,], markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data),
+cyd <- cyData(assay=counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
+expect_error(cyData(counts[1:10,], markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
              "'intensities' and 'object' must have same number of rows")
-expect_error(cyData(counts, markerData=marker.data[1:10,], intensities=medians, cellIntensities=cell.int, cellData=cell.data),
+expect_error(cyData(counts, markerData=marker.data[1:10,], intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
              "'markerData' and 'cellIntensities' must have same number of rows")
-expect_error(cyData(counts, markerData=marker.data, intensities=medians[1:10,], cellIntensities=cell.int, cellData=cell.data),
+expect_error(cyData(counts, markerData=marker.data, intensities=medians[1:10,], cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
              "'intensities' and 'object' must have same number of rows")
-expect_error(cyData(counts, markerData=marker.data, intensities=medians[,1:10], cellIntensities=cell.int, cellData=cell.data),
+expect_error(cyData(counts, markerData=marker.data, intensities=medians[,1:10], cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
              "number of rows in 'markerData' and columns in 'intensities' must be equal")
-expect_error(cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int[1:10,], cellData=cell.data),
+expect_error(cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int[1:10,], cellData=cell.data, cellAssignments=cell.assign),
              "'markerData' and 'cellIntensities' must have same number of rows")
-expect_error(cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data[1:10,,drop=FALSE]),
+expect_error(cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data[1:10,,drop=FALSE], cellAssignments=cell.assign),
              "number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
+expect_error(cyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign[1:10]),
+             "number of rows in 'intensities' and length of 'cellAssignments' should be equal")
 
 # Checking getters.
 expect_identical(marker.data, markerData(cyd))
@@ -30,6 +33,7 @@ expect_equivalent(medians, intensities(cyd))
 expect_equivalent(cell.int, cellIntensities(cyd))
 expect_identical(cell.data, cellData(cyd))
 expect_equivalent(counts, assay(cyd))
+expect_equivalent(cell.assign, cellAssignments(cyd))
 
 expect_identical(rownames(marker.data), markernames(cyd))
 expect_identical(nrow(marker.data), nmarkers(cyd))       
@@ -38,7 +42,7 @@ expect_identical(markernames(cyd), colnames(intensities(cyd)))
 expect_identical(markernames(cyd), rownames(cellIntensities(cyd)))
 
 # Checking that arguments are passed to SummarizedExperiment.
-cyd <- cyData(counts, metadata=list("YAY"), markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data)
+cyd <- cyData(counts, metadata=list("YAY"), markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
 expect_identical("YAY", metadata(cyd)[[1]])
 
 # Running setters.
@@ -84,6 +88,7 @@ by.row <- c(10, 20, 50, 60, 71, 92, 100)
 cyd.x <- cyd[by.row,]
 expect_identical(assay(cyd.x), assay(cyd)[by.row,])
 expect_equivalent(intensities(cyd.x), intensities(cyd)[by.row,])
+expect_equivalent(cellAssignments(cyd.x), cellAssignments(cyd)[by.row])
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
@@ -92,6 +97,7 @@ by.col <- c(1, 2, 5, 9)
 cyd.x <- cyd[,by.col]
 expect_identical(assay(cyd.x), assay(cyd)[,by.col])
 expect_equivalent(intensities(cyd.x), intensities(cyd))
+expect_equivalent(cellAssignments(cyd.x), cellAssignments(cyd))
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
@@ -99,6 +105,7 @@ expect_identical(markerData(cyd.x), markerData(cyd))
 cyd.x <- cyd[by.row, by.col]
 expect_identical(assay(cyd.x), assay(cyd)[by.row,by.col])
 expect_equivalent(intensities(cyd.x), intensities(cyd)[by.row,])
+expect_equivalent(cellAssignments(cyd.x), cellAssignments(cyd)[by.row])
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
@@ -106,9 +113,8 @@ expect_identical(markerData(cyd.x), markerData(cyd))
 # Running subset replacement.
 counts2 <- matrix(rpois(1000, 10), ncol=10)
 medians2 <- matrix(rgamma(2000, 1, 1), ncol=20)
-cyd2 <- cyData(counts2, markerData=marker.data, intensities=medians2, cellIntensities=cell.int, cellData=cell.data)
-cyd3 <- cyData(counts2, markerData=marker.data[rev(seq_len(nrow(marker.data))),], 
-    intensities=medians2, cellIntensities=cell.int, cellData=cell.data)
+cell.assign2 <- rep(list(2), nrow(counts))
+cyd2 <- cyData(counts2, markerData=marker.data, intensities=medians2, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign2)
 
 cyd.x <- cyd
 cyd.x[by.row,] <- cyd2[by.row,]
@@ -118,6 +124,9 @@ expect_equivalent(counts.x, assay(cyd.x))
 medians.x <- medians
 medians.x[by.row,] <- medians2[by.row,]
 expect_equivalent(medians.x, intensities(cyd.x))
+assign.x <- cell.assign
+assign.x[by.row] <- cell.assign2[by.row]
+expect_equivalent(assign.x, cellAssignments(cyd.x))
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
@@ -128,10 +137,12 @@ counts.x <- counts
 counts.x[,by.col] <- counts2[,by.col]
 expect_equivalent(counts.x, assay(cyd.x))
 expect_equivalent(medians, intensities(cyd.x))
+expect_equivalent(cell.assign, cellAssignments(cyd.x))
 expect_equivalent(cellIntensities(cyd.x), cellIntensities(cyd))
 expect_identical(cellData(cyd.x), cellData(cyd))
 expect_identical(markerData(cyd.x), markerData(cyd))
 
+cyd3 <- cyData(counts2, markerData=marker.data[rev(seq_len(nrow(marker.data))),], intensities=medians2, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
 expect_error(cyd.x[by.row,] <- cyd3[by.row,], "'markerData' are not identical")
 expect_error(cyd.x[,by.col] <- cyd3[,by.col], "'markerData' are not identical")
 
@@ -156,8 +167,7 @@ expect_error(rbind(cyd, cyd3), "'markerData' are not identical")
 # Checking that empty construction still works.
 cyd.minimal <- cyData(assays=matrix(0, 0, 10), markerData=marker.data, cellIntensities=cell.int, cellData=cell.data)
 expect_equal(rbind(cyd, cyd.minimal), cyd)
-cyd.minimal <- cyData(assays=matrix(0, nrow(medians), 0), intensities=medians, 
-    markerData=marker.data, cellIntensities=cell.int, cellData=cell.data)
+cyd.minimal <- cyData(assays=matrix(0, nrow(medians), 0), intensities=medians, cellAssignments=cell.assign, markerData=marker.data, cellIntensities=cell.int, cellData=cell.data)
 expect_equal(cbind(cyd, cyd.minimal), cyd)
 
 expect_identical(nrow(cyd[0,]), 0L)

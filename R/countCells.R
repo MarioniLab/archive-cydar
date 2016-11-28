@@ -40,11 +40,12 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
                     cluster.info=cluster.info, filter=filter, BPPARAM=BPPARAM)
 
     # Assembling output into a coherent set.
-    out.counts <- out.coords <- out.index <- list()
+    out.counts <- out.coords <- out.cells <- out.index <- list()
     for (i in seq_along(out)) {
         if (is.character(out[[i]])) { stop(out[[i]]) }
         out.counts[[i]] <- out[[i]]$counts
         out.coords[[i]] <- out[[i]]$coords
+        out.cells[[i]] <- out[[i]]$cells
         out.index[[i]] <- out[[i]]$index
     }
 
@@ -52,6 +53,8 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     colnames(out.counts) <- samples
     out.coords <- do.call(rbind, out.coords)
     colnames(out.coords) <- markers
+    out.cells <- unlist(out.cells, recursive=FALSE)
+    names(out.cells) <- NULL
     out.index <- unlist(out.index)
     names(out.index) <- NULL
 
@@ -60,11 +63,12 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     out.counts <- out.counts[o,,drop=FALSE]
     rownames(out.counts) <- seq_along(o)
     out.coords <- out.coords[o,,drop=FALSE]
+    out.cells <- out.cells[o]
     out.index <- out.index[o]
 
     all.ncells <- tabulate(sample.id+1L, length(samples))
     output <- new("cyData", x, assays=Assays(list(counts=out.counts)), 
-                  intensities=out.coords, 
+                  intensities=out.coords, cellAssignments=out.cells,
                   elementMetadata=DataFrame(center.cell=out.index)) 
     output$totals <- all.ncells
     metadata(output)$tol <- tol
@@ -78,11 +82,13 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     if (!is.character(out)) { 
         counts <- out[[1]]
         coords <- out[[2]]
+        cells <- out[[3]]
         keep <- rowSums(counts) >= filter
         counts <- counts[keep,,drop=FALSE]
         coords <- coords[keep,,drop=FALSE]
+        cells <- cells[keep]
         index <- curcells[keep] + 1L
-        return(list(counts=counts, coords=coords, index=index))
+        return(list(counts=counts, coords=coords, cells=cells, index=index))
     }
     return(out)
 }

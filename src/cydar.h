@@ -28,6 +28,8 @@ SEXP get_nndist(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
+SEXP pack_indices(SEXP, SEXP);
+
 }
 
 #endif 

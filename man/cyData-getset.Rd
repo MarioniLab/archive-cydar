@@ -24,6 +24,11 @@
 \alias{intensities,cyData-method}
 \alias{intensities<-}
 \alias{intensities<-,cyData-method}
+\alias{cellAssignments}
+\alias{cellAssignments,cyData-method}
+\alias{cellAssignments<-}
+\alias{cellAssignments<-,cyData-method}
+
 \alias{cellIntensities}
 \alias{cellIntensities,cyData-method}
 \alias{cellIntensities<-}
@@ -42,6 +47,9 @@
 
 \S4method{intensities}{cyData}(x)
 \S4method{intensities}{cyData}(x) <- value
+
+\S4method{cellAssignments}{cyData}(x)
+\S4method{cellAssignments}{cyData}(x) <- value
 
 \S4method{cellIntensities}{cyData}(x)
 \S4method{cellIntensities}{cyData}(x) <- value
@@ -68,8 +76,9 @@ Otherwise, an appropriate object to use to replace the corresponding slot of \co
 }
 
 \details{
-\code{markerData}, \code{intensities}, \code{cellIntensities} and \code{cellData} are methods to get or set the slots in a cyData object. 
-Some caution is advised when using \code{cellIntensities<-} and/or \code{cellData<-}, as several methods in this package rely on a particular ordering of cells.
+\code{markerData}, \code{intensities}, \code{cellAssignments}, \code{cellIntensities} and \code{cellData} are methods to get or set the slots in a cyData object.
+general, setting should not be performed unless adding annotation for particular markers or cells (or if you really know what you're doing). 
+Caution is especially advised when using \code{cellIntensities<-} and/or \code{cellData<-}, as several methods in this package rely on a particular ordering of cells.
 
 Several convenience functions are also provided.
 \code{nmarkers} will return the number of markers, while \code{ncells} will return the number of cells.

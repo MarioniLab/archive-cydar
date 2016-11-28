@@ -38,7 +38,7 @@ This value is sensible as intensities are usually on a log-10 scale, such that a
 
 The coordinates are reported as (weighted) medians across all cells in each hypersphere.
 This better reflects the location of the hypersphere if the cells are not distributed around the centre.
-Note that in practice, a weighted median is computed where each cell is weighted inversely proportional to the total number of cells in the corresponding sample.
+Each cell is weighted inversely proportional to the total number of cells in the corresponding sample.
 This ensures that large samples do not dominate the median calculation.
 
 All hyperspheres with count sums below \code{filter} are removed by default.
@@ -59,6 +59,8 @@ A cyData object containing the following information:
 \describe{
 \item{\code{counts}}{An integer matrix of counts for each hypersphere (row) and sample (column) in the \code{Assays} slot.}
 \item{\code{intensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{intensities} slot.}
+\item{\code{cellAssignments}:}{A list of integer vectors specifying the cells belonging in each group.
+This is stored in a compressed format, see \code{\link{packIndices}} for details.}
 \item{\code{totals}:}{An integer vector specifying the total number of cells in each sample, stored as a field in the \code{colData} slot.}
 \item{\code{tol}:}{An integer scalar equal to \code{tol}, stored in the \code{metadata} slot.}
 \item{\code{center.cell}:}{An integer vector specifying the column of \code{cellIntensities} containing the centre of each hypersphere, stored as a field in the \code{rowData} slot.}
@@ -78,7 +80,8 @@ Automated mapping of phenotype space with single-cell data.
 }
 
 \seealso{
-\code{\link{prepareCellData}}
+\code{\link{prepareCellData}},
+\code{\link{packIndices}}
 }
 \examples{
 example(prepareCellData, echo=FALSE)

@@ -1,4 +1,5 @@
 #include "objects.h"
+#include "packer.hpp"
 
 SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP centers, SEXP cluster_info, SEXP curcells) try {
     finder fx(exprs, centers, cluster_info);
@@ -40,7 +41,7 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
     const int* cptr=INTEGER(curcells);
    
     // Setting up output vectors. 
-    SEXP output=PROTECT(allocVector(VECSXP, 2));
+    SEXP output=PROTECT(allocVector(VECSXP, 3));
     try {
         std::deque<int*> count_ptrs;
         SET_VECTOR_ELT(output, 0, allocMatrix(INTSXP, N, nsamples));
@@ -59,6 +60,10 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
         for (size_t mi=1; mi<nmarkers; ++mi) { 
             coord_ptrs.push_back(coord_ptrs[mi-1] + N);
         }
+
+        SET_VECTOR_ELT(output, 2, allocVector(VECSXP, N));
+        SEXP cellids=VECTOR_ELT(output, 2);
+        std::deque<int> sorted_ids;
 
         size_t icx, mi;
         int si;   
@@ -80,6 +85,13 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
                 // Check here, otherwise median calculations fail.
                 throw std::runtime_error("cell failed to count itself");
             }
+            
+            // Storing the identities of the cells (compressed).
+            pack_index_vector(sorted_ids, collected.begin(), collected.end());
+            SET_VECTOR_ELT(cellids, ix, allocVector(INTSXP, sorted_ids.size()));
+            std::copy(sorted_ids.begin(), sorted_ids.end(), INTEGER(VECTOR_ELT(cellids, ix)));
+            
+            // Computing counts and total weights.
             total_weight=0;
             for (icx=0; icx<collected.size(); ++icx) {
                 const int& cursample=sample_ids[collected[icx]];

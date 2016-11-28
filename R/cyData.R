@@ -4,6 +4,7 @@ setClass("cyData", contains="SummarizedExperiment",
          slots=c(markerData="DataFrame",
                  cellIntensities="matrix",
                  cellData="DataFrame",
+                 cellAssignments="list",
                  intensities="matrix"))
 
 setValidity2("cyData", function(object) {
@@ -24,6 +25,9 @@ setValidity2("cyData", function(object) {
     }
     if (nrow(object@intensities)!=nrow(object)) { 
         return("'intensities' and 'object' must have same number of rows")
+    }
+    if (nrow(object@intensities)!=length(object@cellAssignments)) {
+        return("number of rows in 'intensities' and length of 'cellAssignments' should be equal")
     }
     return(TRUE)
 })
@@ -50,7 +54,7 @@ setMethod("show", signature("cyData"), function(object) {
 #############################################
 # Defining a reasonably helpful constructor.
 
-cyData <- function(markerData, intensities=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
+cyData <- function(markerData, intensities=NULL, cellAssignments=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
     marker.names <- rownames(markerData)
     if (is.null(marker.names)) {
         stop("rownames of 'markerData' must contain marker names")
@@ -79,34 +83,50 @@ cyData <- function(markerData, intensities=NULL, cellIntensities=NULL, cellData=
         dimnames(intensities) <- NULL
     }
 
-    new("cyData", markerData=markerData, cellIntensities=cellIntensities, 
-        cellData=cellData, intensities=intensities, se)
+    if (is.null(cellAssignments)) {
+        cellAssignments <- rep(list(integer(0)), nrow(assays))  
+    } else {
+        names(cellAssignments) <- NULL
+    }
+
+    new("cyData", markerData=markerData, cellIntensities=cellIntensities, cellData=cellData, 
+        intensities=intensities, cellAssignments=cellAssignments, se)
 }
 
 #############################################
 # Subsetting, as the SE class doesn't use extractROWS or replaceROWs.
 
 setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
-    if (!missing(i)) { x@intensities <- x@intensities[i,,drop=FALSE] }
+    if (!missing(i)) { 
+        x@intensities <- x@intensities[i,,drop=FALSE] 
+        x@cellAssignments <- x@cellAssignments[i]
+    }
     callNextMethod()
 })
 
-.check_identical_refdata <- function(x, y, check.medians=TRUE) {
+.check_identical_refdata <- function(x, y, check.group.values=TRUE) {
     if (!identical(x@markerData, y@markerData)) {
         stop("'markerData' are not identical")
     }
     if (!identical(x@cellIntensities, y@cellIntensities)) {
         stop("'cellIntensities' are not identical")
     }
-    if (check.medians && !identical(x@intensities, y@intensities)) {
-        stop("'intensities' are not identical")
+    if (check.group.values) {
+        if (!identical(x@intensities, y@intensities)) {
+            stop("'intensities' are not identical")
+        } else if (!identical(x@cellAssignments, y@cellAssignments)) { 
+            stop("'cellAssignments' are not identical")
+        }
     }
     return(TRUE)
 }
 
 setMethod("[<-", c("cyData", "ANY", "ANY", "cyData"), function(x, i, j, ..., value) {
-    .check_identical_refdata(x, value, check.medians=FALSE)
-    if (!missing(i)) { x@intensities[i,] <- value@intensities }
+    .check_identical_refdata(x, value, check.group.values=FALSE)
+    if (!missing(i)) { 
+        x@intensities[i,] <- value@intensities 
+        x@cellAssignments[i] <- value@cellAssignments
+    }
     callNextMethod(x=x, i=i, j=j, ..., value=value)
 })
 
@@ -139,6 +159,21 @@ setGeneric("cellIntensities<-", function(x, value) standardGeneric("cellIntensit
 setReplaceMethod("cellIntensities", "cyData", function(x, value){
     x@cellIntensities <- value
     dimnames(x@cellIntensities) <- NULL
+    validObject(x)
+    return(x)
+})
+
+setGeneric("cellAssignments", function(x) standardGeneric("cellAssignments"))
+setMethod("cellAssignments", "cyData", function(x) {
+    out <- x@cellAssignments
+    names(out) <- rownames(x)
+    return(out)
+})
+
+setGeneric("cellAssignments<-", function(x, value) standardGeneric("cellAssignments<-"))
+setReplaceMethod("cellAssignments", "cyData", function(x, value){
+    x@cellAssignments <- value
+    names(x@cellAssignments) <- NULL
     validObject(x)
     return(x)
 })
@@ -204,21 +239,22 @@ setMethod("cbind", "cyData", function(..., deparse.level=1) {
     }
     
     base <- do.call(cbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new("cyData", base, intensities=ref@intensities, cellData=ref@cellData,
-        cellIntensities=ref@cellIntensities, markerData=ref@markerData)
+    new("cyData", base, intensities=ref@intensities, cellAssignments=ref@cellAssignments,
+        cellData=ref@cellData, cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
 setMethod("rbind", "cyData", function(..., deparse.level=1) {
     args <- unname(list(...))
     ref <- args[[1]]
     for (x in args[-1]) {
-        .check_identical_refdata(x, ref, check.medians=FALSE)
+        .check_identical_refdata(x, ref, check.group.values=FALSE)
     }
 
     base <- do.call(rbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new.meds <- do.call(rbind, lapply(args, slot, name="intensities"))
-    new("cyData", base, intensities=new.meds, cellData=ref@cellData,
-        cellIntensities=ref@cellIntensities, markerData=ref@markerData)
+    new.intensities <- do.call(rbind, lapply(args, slot, name="intensities"))
+    new.assignments <- unlist(lapply(args, slot, name="cellAssignments"), recursive=FALSE)
+    new("cyData", base, intensities=new.intensities, cellAssignments=new.assignments,
+        cellData=ref@cellData, cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
 setMethod("c", "cyData", function(x, ..., recursive = FALSE) {

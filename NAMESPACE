@@ -22,6 +22,7 @@ exportMethods(nmarkers,
     sampleNames, "sampleNames<-",
     markerData, "markerData<-",
     intensities, "intensities<-",
+    cellAssignments, "cellAssignments<-",
     cellIntensities, "cellIntensities<-",
     cellData, "cellData<-"
 )
@@ -38,6 +39,8 @@ export(countCells,
     neighborDistances,
     findFirstSphere,
     interpretSpheres,
-    cyData
+    cyData,
+    packIndices,
+    unpackIndices
 )
 

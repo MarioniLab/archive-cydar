@@ -44,6 +44,7 @@ for (setup in 1:5) {
     to.select <- c(to.select1, to.select2)
     combined <- rbind(all.values1, all.values2)
     origin <- rep(1:2, c(nrow(all.values1), nrow(all.values2)))
+    cell.id <- c(seq_len(nrow(all.values1)), seq_len(nrow(all.values2)))
     new.dist <- tol * sqrt(nmarkers)
 
     collected.counts <- list()
@@ -52,7 +53,8 @@ for (setup in 1:5) {
     for (i in which(to.select)) { 
         curdist <- sqrt(colSums((t(combined) - combined[i,])^2))
         inrange <- curdist <= new.dist
-        collected.counts[[index]] <- tabulate(origin[inrange], nbins=length(fs))
+        cursamples <- origin[inrange]
+        collected.counts[[index]] <- tabulate(cursamples, nbins=length(fs))
 
         # Need to calculate lower/upper bounds for the median, as numerical imprecision has big effects.
         cur.meds <- apply(combined, 2, 
@@ -90,6 +92,13 @@ for (setup in 1:5) {
 
     expect_equal(tol, metadata(out)$tol)
     expect_equal(c(ncells1, ncells2), out$totals)
+
+    # Checking the consistency of the compressed vectors with the counts.
+    for (r in seq_along(cellAssignments(out))) { 
+        cell.indices <- unpackIndices(cellAssignments(out)[r])
+        expect_equivalent(assay(out)[r,], tabulate(cellData(out)$sample.id[cell.indices[[1]]], nbin=2))
+        expect_identical(packIndices(cell.indices), cellAssignments(out)[r])
+    }
 }
 
 # Running silly settings.
@@ -97,3 +106,4 @@ suppressWarnings(out <- countCells(cd, filter=1L, tol=0))
 expect_true(all(rowSums(assay(out))==1L))
 out <- countCells(cd, filter=Inf)
 expect_identical(nrow(out), 0L)
+
