@@ -21,6 +21,7 @@ This function examines each cell at the specified downsampling frequency, and co
 If \code{as.tol=TRUE}, these distances are reported on the same scale as \code{tol} in \code{\link{countCells}}.
 This allows users to choose a value for \code{tol} based on the output of this function.
 Otherwise, the distances are reported without modification.
+If \code{markerData(x)$used} is not all \code{TRUE}, only the specified markers will be used to calculate the distance.
 
 To visualize the distances/tolerances, one option is to use boxplots, as shown below.
 Each boxplot represents the distribution of tolerances required for hyperspheres to contain a certain number of cells.

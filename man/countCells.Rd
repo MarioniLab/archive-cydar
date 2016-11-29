@@ -50,6 +50,10 @@ Here, the distance between the hypersphere and cluster centers is first computed
 If \code{naive=TRUE}, a slower naive approach will be used where distances are computed between all pairs of cells.
 This is generally only useful for testing.
 
+If \code{markerData(x)$used} is not all \code{TRUE}, only the specified markers will be used in the distance calculations.
+Median coordinates will not be calculated for any discarded markers, instead being reported as \code{NA} in the utput \code{intensities}.
+Note that the \code{used} field should not be set directly -- \code{\link{prepareCellData}} must be run again to change the set of used markers.
+
 Users can also increase speed by setting \code{BPPARAM} to use multiple cores.
 Neither this or \code{naive} will not affect the final results, only the speed with which they are obtained.
 }
