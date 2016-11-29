@@ -46,29 +46,4 @@ rownames(ref) <- c("min", "max")
 expect_equal(x, ref)
 
 #####################################################
-# Testing the function that finds my neighbours.
-# Couldn't be bothered putting this in a separate file.
-
-set.seed(400)
-
-for (tol in c(0.3,0.4,0.5,0.6,0.7)) { 
-    stuff <- list(A=matrix(rgamma(1000, 2, 2), ncol=20))
-    colnames(stuff$A) <- paste0("X", seq_len(ncol(stuff$A)))
-    cd <- prepareCellData(stuff)
-    restuff <- matrix(rgamma(10000, 2, 2), nrow=20)
-
-    # Standard calculation.
-    distance <- tol*sqrt(nrow(restuff)) 
-    ci <- cellIntensities(cd)
-    was.counted <- .Call(cydar:::cxx_find_counted, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, restuff, distance)
-
-    # Reference calculation.
-    is.okay <- logical(ncol(restuff))
-    for (i in seq_len(ncol(restuff))){ 
-        all.distances <- sqrt(colSums((restuff[,i] - ci)^2))
-        is.okay[i] <- any(all.distances <= distance)
-    }
-    expect_identical(is.okay, was.counted)
-}
-
 
