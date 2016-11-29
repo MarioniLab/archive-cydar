@@ -6,12 +6,13 @@
 \description{Pick the best markers that distinguish between cells in and outside of a set of hyperspheres.}
 
 \usage{
-pickBestMarkers(x, chosen, downsample=10, p=0.05, naive=FALSE)
+pickBestMarkers(x, chosen, markers=NULL, downsample=10, p=0.05, naive=FALSE)
 }
 
 \arguments{
 \item{x}{A cyData object, constructed using \code{\link{countCells}}.}
 \item{chosen}{A vector specifying the rows of \code{x} corresponding to the hyperspheres of interest.} 
+\item{markers}{A vector specifying the markers to use in the LASSO regression.}
 \item{downsample}{A numeric scalar specifying the cell downsampling interval.}
 \item{p}{A numeric scalar defining the quantiles for gating.}
 \item{naive}{A logical scalar specifying whether a naive search should be used.}
@@ -38,11 +39,15 @@ For a top set of markers, we calculate the number of cells from the subpopulatio
 We repeat this for the number of cells not in the subpopulation (false positives).
 This allows us to compute the recovery (i.e., sensitivity) of the gating scheme as the proportion of true positives out of the total number of cells in the subpopulation;
     and the contamination (i.e., non-specificity), as the proportion of false positives out of the total number of gated cells.
+
+If \code{markers} is specified, only the supplied markers are used in the regression.
+Otherwise, the markers to use are extracted from \code{markerData(x)$used}, which is set by \code{\link{prepareCellData}}.
+By default, all markers are used unless otherwise requested.
 }
 
 \value{
 A data frame is returned, where each row is a marker ordered in terms of decreasing importance.
-The contamination and recovery proportions of the top \code{n} markers are reported at row \code{n}, along with the LASSO iteration to denote ties.
+The combined contamination and recovery proportions of the top \code{n} markers are reported at row \code{n}, along with the LASSO iteration to denote ties.
 The lower and upper gating boundaries are also reported for each marker.
 }
 
@@ -67,6 +72,6 @@ cd <- prepareCellData(list(A=ex))
 cnt <- countCells(cd, filter=1L)
 
 # Selecting hyperspheres centred on cells in the first mocked-up subpopulation.
-selected <- cellData(cnt)$cell.id[rowData(cnt)$center.cell] <= 1000
+selected <- cellData(cnt)$cell.id[rowData(cnt)$center.cell] > 1000
 pickBestMarkers(cnt, selected)
 }

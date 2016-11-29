@@ -1,7 +1,7 @@
 #include "objects.h"
 
 SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold) try {
-    finder fx(coords, centers, clust_info);
+    finder fx(coords, R_NilValue, centers, clust_info);
     const size_t nhyper=fx.searcher -> get_ncells();
     const size_t nmarkers=fx.searcher -> get_nmarkers();
 

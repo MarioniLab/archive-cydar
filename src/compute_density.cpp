@@ -5,7 +5,7 @@ SEXP get_knn_distance(SEXP coords, SEXP centers, SEXP clust_info, SEXP nn) try {
         throw std::runtime_error("number of neighbours must be an integer scalar");
     }
     const size_t NN=asInteger(nn);
-    finder fx(coords, centers, clust_info);
+    finder fx(coords, R_NilValue, centers, clust_info);
     const size_t nhyper=fx.searcher -> get_ncells();
 
     SEXP output=PROTECT(allocVector(REALSXP, nhyper));
@@ -32,7 +32,7 @@ SEXP compute_density (SEXP coords, SEXP centers, SEXP clust_info, SEXP radius) t
         throw std::runtime_error("radius must be a double-precision scalar"); 
     }
     const double rad=asReal(radius);
-    finder fx(coords, centers, clust_info);
+    finder fx(coords, R_NilValue, centers, clust_info);
     const size_t nhyper=fx.searcher -> get_ncells();
 
     SEXP output=PROTECT(allocVector(REALSXP, nhyper));

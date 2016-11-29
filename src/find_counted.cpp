@@ -6,7 +6,7 @@
  *****************************************/
 
 SEXP find_counted(SEXP hyperx, SEXP centers, SEXP info, SEXP cell_exprs, SEXP distance) try {
-    finder fx(hyperx, centers, info);
+    finder fx(hyperx, R_NilValue, centers, info);
     matrix_info cx=check_matrix(cell_exprs); 
     const size_t& ncells=cx.ncol;
     const size_t& nmarkers=cx.nrow;

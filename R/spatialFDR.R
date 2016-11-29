@@ -5,10 +5,12 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 #
 # written by Aaron Lun
 # created 23 May 2016
-# last modified 11 August 2016
+# last modified 29 November 2016
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
     colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
+    coords <- .find_valid_markers(coords, return.matrix=TRUE) # dropping NA markers.
+
     converted <- prepareCellData(list(X=coords), naive=naive)
     new.coords <- cellIntensities(converted)
     cluster.centers <- metadata(converted)$cluster.centers
@@ -45,5 +47,21 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
     adjp <- numeric(length(o))
     adjp[o] <- rev(cummin(rev(sum(w)*pvalues/cumsum(w))))
     pmin(adjp, 1)
+}
+
+.find_valid_markers <- function(coords, return.matrix=FALSE) {
+    NC <- ncol(coords)
+    to.use <- logical(NC)
+    for (i in seq_len(NC)) {
+        failed <- is.na(coords[,i])
+        if (!any(failed)) {
+            to.use[i] <- TRUE
+        } else if (!all(failed)) {
+            stop("columns should be all NA or with no NA values")
+        }
+    }
+    if (!return.matrix) return(to.use)  
+    if (!all(to.use)) coords <- coords[,to.use,drop=FALSE]
+    return(coords)
 }
 

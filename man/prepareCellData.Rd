@@ -28,7 +28,7 @@ Intensity matrices from several samples are also merged into a single matrix for
 Note that \code{naive} does \emph{not} change the results of downstream functions, only the computational algorithm with which they are obtained.
 
 If \code{markers} is specified, only the specified markers will be used in the distance calculations.
-This also applies to calculations in downstream functions like \code{\link{countCells}} and \code{\link{neighborDistances}.
+This also applies to calculations in downstream functions like \code{\link{countCells}} and \code{\link{neighborDistances}}.
 All other markers will be ignored unless their usage is explicitly requested.
 By default, \code{markers=NULL} which means that all supplied markers will be used in the calculations.
 }

@@ -20,11 +20,11 @@ SEXP get_knn_distance(SEXP, SEXP, SEXP, SEXP);
 
 SEXP compute_density(SEXP, SEXP, SEXP, SEXP);
 
-SEXP count_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP count_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP find_counted(SEXP, SEXP, SEXP, SEXP, SEXP);
 
-SEXP get_nndist(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP get_nndist(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
