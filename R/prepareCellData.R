@@ -1,31 +1,61 @@
-prepareCellData <- function(x, naive=FALSE, ...) 
+prepareCellData <- function(x, naive=FALSE, markers=NULL, ...) 
 # Converts it into a format more suitable for high-speed analysis.
 # Also does k-means clustering to generate the necessary clusters.
 #
-# created by Aaron Lun
+# written by Aaron Lun
 # created 14 August 2016
-# last modified 14 November 2016    
+# last modified 29 November 2016    
 {
     on.exit({gc()}) # Getting rid of huge memory structures that have built up.
 
+if (!is.matrix(x)) { 
     cell.data <- .pull_out_data(x)
-    nsamples <- length(cell.data$samples)
-    nmarkers <- length(cell.data$markers)
+    sample.names <-  cell.data$samples
+    marker.names <- cell.data$markers
     exprs.list <- cell.data$exprs
 
     exprs <- do.call(rbind, exprs.list)
     sample.id <- rep(seq_along(exprs.list), sapply(exprs.list, nrow))
     cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } ), use.names=FALSE)
+} else {
+    sample.names <- attributes(x)$samples
+    if (is.null(sample.names)) stop("'attributes(x)$samples' must contain sample names")
+    marker.names <- colnames(x)
+    if (is.null(marker.names)) stop("column names of 'x' must be marker names")
+    exprs <- x
+    sample.id <- attributes(x)$sample.id
+    if (is.null(sample.id)) stop("'attributes(x)$sample.id' must contain sample IDs for each cell")
+    cell.id <- integer(nrow(x))
+    for (s in seq_along(sample.names)) {
+        in.sample <- sample.id==s
+        cell.id[in.sample] <- seq_len(sum(in.sample))
+    }
+}
+
+    # Picking markers to use.
+    if (!is.null(markers)) {
+        if (is.character(markers)) {
+            used <- marker.names %in% markers
+            if (!all(markers %in% marker.names)) { 
+                stop("specified 'markers' not in available set of markers")
+            }
+        } else {
+            used <- logical(length(marker.names))
+            used[markers] <- TRUE
+        }
+    } else {
+        used <- rep(TRUE, length(marker.names))
+    }
 
 if (!naive) {
     # K-means clustering.
     N <- ceiling(sqrt(nrow(exprs)))
     tryCatch({
-        out <- kmeans(exprs, centers=N, ...)
+        out <- kmeans(exprs[,used,drop=FALSE], centers=N, ...)
     }, error=function(e) {
     }, finally={
         # Adding jitter, if many cells are duplicated.
-        out <- kmeans(jitter(exprs), centers=N, ...)
+        out <- kmeans(jitter(exprs[,used,drop=FALSE]), centers=N, ...)
     })
     by.clust <- split(seq_len(nrow(exprs)), out$cluster)
     clust.info <- list()
@@ -36,7 +66,7 @@ if (!naive) {
     for (clust in seq_len(nrow(out$centers))) {
         chosen <- by.clust[[clust]]
         current.vals <- t(exprs[chosen,,drop=FALSE])
-        cur.dist <- sqrt(colSums((out$centers[clust,] - current.vals)^2))
+        cur.dist <- sqrt(colSums((out$centers[clust,] - current.vals[used,,drop=FALSE])^2))
 
         o <- order(cur.dist)
         new.exprs[[clust]] <- current.vals[,o,drop=FALSE]
@@ -47,9 +77,17 @@ if (!naive) {
         clust.info[[clust]] <- list(accumulated, cur.dist)
         accumulated <- accumulated + length(o)
     }
+   
+    # Filling unused marker columns with NAs, as nrows must be equal to number of markers.
+    if (!all(used)) { 
+        clust.centers <- matrix(NA_real_, nrow(out$centers), length(marker.names))
+        clust.centers[,used] <- out$centers
+    } else {
+        clust.centers <- out$centers
+    }
 
     all.exprs <- do.call(cbind, new.exprs)
-    metadata <- list(cluster.centers=t(out$centers), cluster.info=clust.info)
+    metadata <- list(cluster.centers=t(clust.centers), cluster.info=clust.info)
     sample.id <- unlist(new.samples)
     cell.id <- unlist(new.cells)
 } else {
@@ -59,9 +97,9 @@ if (!naive) {
   
     # Collating the output. 
     cyData(cellIntensities=all.exprs,
-           markerData=DataFrame(row.names=cell.data$markers),
-           colData=DataFrame(row.names=cell.data$samples),
-           assays=matrix(0L, 0, length(cell.data$samples)),
+           markerData=DataFrame(row.names=marker.names, used=used),
+           colData=DataFrame(row.names=sample.names),
+           assays=matrix(0L, 0, length(sample.names)),
            cellData=DataFrame(sample.id=sample.id, cell.id=cell.id),
            metadata=metadata)
 }

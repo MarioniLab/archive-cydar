@@ -14,6 +14,7 @@ all.values2 <- matrix(rnorm(ncells2*nmarkers, sd=1), nrow=ncells2, ncol=nmarkers
 colnames(all.values2) <- colnames(all.values1)
 fs <- list(A=all.values1, B=all.values2)
 
+set.seed(900)
 out <- prepareCellData(list(X=all.values1, Y=all.values2))
 
 # Checking that the intensities are the same.
@@ -39,3 +40,26 @@ expect_identical(cellData(nout)$cell.id, c(seq_len(ncells1), seq_len(ncells2)))
 
 expect_identical(NULL, metadata(nout)$cluster.info)
 expect_identical(NULL, metadata(nout)$cluster.centers)
+
+# Trying what happens with marker specifications.
+spec <- c(2,3,4)
+set.seed(100)
+out.sub <- prepareCellData(list(X=all.values1, Y=all.values2), markers=spec)
+set.seed(100)
+out.ref <- prepareCellData(list(X=all.values1[,spec], Y=all.values2[,spec]))
+    
+expect_identical(cellData(out.sub), cellData(out.ref))
+expect_identical(cellIntensities(out.sub)[spec,], cellIntensities(out.ref))
+expect_identical(assay(out.sub), assay(out.ref))
+expect_identical(as.integer(spec), which(markerData(out.sub)$used))
+expect_identical(markernames(out), markernames(out.sub))
+
+# Trying what happens with a matrix specification.
+incoming <- rbind(all.values1, all.values2)
+attributes(incoming)$samples <- c("X", "Y")
+attributes(incoming)$sample.id <- rep(1:2, c(nrow(all.values1), nrow(all.values2)))
+
+set.seed(900)
+out.mat <- prepareCellData(incoming)
+expect_equal(out.mat, out)
+

@@ -6,13 +6,14 @@
 \description{Convert single-cell marker intensities from a mass cytometry experiment into a format for efficient counting.}
 
 \usage{
-prepareCellData(x, naive=FALSE, ...)
+prepareCellData(x, naive=FALSE, markers=NULL, ...)
 }
 
 \arguments{
 \item{x}{A named list of numeric matrices, where each matrix corresponds to a sample and contains expression intensities for each cell (row) and each marker (column).
 Alternatively, a ncdfFlowSet object containing the same information.}
 \item{naive}{A logical scalar specifying whether k-means clustering should be performed.}
+\item{markers}{A vector specifying the markers to use in distance calculations.}
 \item{...}{Additional arguments to pass to \code{\link{kmeans}}.}
 }
 
@@ -25,6 +26,11 @@ The cluster centres and cell assignments are then stored for later use in speedi
 Intensity matrices from several samples are also merged into a single matrix for greater efficiency.
 
 Note that \code{naive} does \emph{not} change the results of downstream functions, only the computational algorithm with which they are obtained.
+
+If \code{markers} is specified, only the specified markers will be used in the distance calculations.
+This also applies to calculations in downstream functions like \code{\link{countCells}} and \code{\link{neighborDistances}.
+All other markers will be ignored unless their usage is explicitly requested.
+By default, \code{markers=NULL} which means that all supplied markers will be used in the calculations.
 }
 
 \value{
@@ -32,6 +38,7 @@ A cyData object with marker intensities for each cell stored in the \code{cellIn
 In addition:
 \itemize{
 \item Marker names are stored as the row names of the \code{markerData} slot.
+An additional \code{used} field also specifies whether the marker was used or not.
 \item Sample names are stored as the column names of the output object.
 \item \code{cellData} contains \code{sample.id}, an integer vector specifying the element of \code{x} that each cell was taken from;
     and \code{cell.id}, an integer vector specifying the row index of each cell in its original matrix.
@@ -67,5 +74,6 @@ cd
 }
 
 \seealso{
-\code{\link{countCells}}
+\code{\link{countCells}},
+\code{\link{neighborDistances}}
 }
