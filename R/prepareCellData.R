@@ -33,19 +33,7 @@ if (!is.matrix(x)) {
 }
 
     # Picking markers to use.
-    if (!is.null(markers)) {
-        if (is.character(markers)) {
-            used <- marker.names %in% markers
-            if (!all(markers %in% marker.names)) { 
-                stop("specified 'markers' not in available set of markers")
-            }
-        } else {
-            used <- logical(length(marker.names))
-            used[markers] <- TRUE
-        }
-    } else {
-        used <- rep(TRUE, length(marker.names))
-    }
+    used <- .chosen_markers(markers, marker.names)
 
 if (!naive) {
     # K-means clustering.
@@ -158,5 +146,21 @@ if (!naive) {
         stop("'cell.data' must be a list or ncdfFlowSet object") 
     }
     return(list(samples=sample.names, markers=marker.names, exprs=expr.val))
+}
+
+.chosen_markers <- function(markers, all.markers) {
+    if (!is.null(markers)) {
+        used <- logical(length(all.markers))
+        if (is.character(markers)) {
+            markers <- match(markers, all.markers)
+            if (any(is.na(markers))) {
+                stop("specified 'markers' not in available set of markers")
+            }
+        }
+        used[markers] <- TRUE
+    } else {
+        used <- rep(TRUE, length(all.markers))
+    }
+    return(used)
 }
 

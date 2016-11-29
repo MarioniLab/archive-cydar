@@ -6,12 +6,13 @@
 \description{Expands the hypersphere radius to account for intensity shifting between non-barcoded samples.}
 
 \usage{
-expandRadius(x, design=NULL, tol=0.5)
+expandRadius(x, design=NULL, markers=NULL, tol=0.5)
 }
 
 \arguments{
 \item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
 \item{design}{A numeric matrix specifying the experimental design.}
+\item{markers}{A vector specifying the markers to use.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius, see \code{\link{countCells}}.}
 }
 
@@ -26,6 +27,10 @@ The estimated increase is added onto \code{tol}, and the returned value can be d
 This expands the hyperspheres to ensure that corresponding subpopulations in different samples are still counted together.
 Otherwise, an intensity shift in one sample may move the cells in a subpopulation out of a hypersphere.
 This will inflate the variability if it occurs between replicate samples, and introduce spurious differences if it occurs between samples in different conditions.
+
+If \code{markers} is specified, only the indicated markers are used to calculate the mean variance.
+Otherwise, the markers to use are extracted from \code{markerData(x)$used}, which is set by \code{\link{prepareCellData}}.
+By default, all markers are used unless otherwise requested.
 }
 
 \value{
@@ -57,5 +62,6 @@ Aaron Lun
 }
 
 \seealso{
+\code{\link{prepareCellData}},
 \code{\link{countCells}}
 }
