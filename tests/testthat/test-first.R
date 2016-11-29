@@ -39,6 +39,14 @@ for (nmarkers in c(10, 20, 30)) {
             all.out[chosen] <- findFirstSphere(coords[chosen,,drop=FALSE], pvalues=pval[chosen], threshold=threshold)
         }
         expect_identical(all.out, bkeep)
+
+        # Throwing in some NA values and checking that it beahves properly.
+        discarded <- c(1,4,5,6,7)
+        subcoords <- coords
+        subcoords[,discarded] <- NA
+        subkeep.1 <- findFirstSphere(subcoords, pvalues=pval, threshold=threshold)
+        subkeep.2 <- findFirstSphere(subcoords[,-discarded], pvalues=pval, threshold=threshold)
+        expect_identical(subkeep.1, subkeep.2)
     }
 }
 
