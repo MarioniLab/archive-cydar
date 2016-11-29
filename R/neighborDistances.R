@@ -3,16 +3,20 @@ neighborDistances <- function(x, neighbors=50, downsample=50, as.tol=TRUE, naive
 #
 # written by Aaron Lun
 # created 7 July 2016
-# last modified 14 November 2016
+# last modified 29 November 2016
 {
     .check_cell_data(x, check.clusters=!naive)
-    markers <- rownames(markerData(x))
     if (naive) {
         cluster.centers <- cluster.info <- NULL
     } else {
         cluster.centers <- metadata(x)$cluster.centers
         cluster.info <- metadata(x)$cluster.info
     }
+
+    # Calculating the number of used markers.
+    markers <- markernames(x)
+    used <- markerData(x)$used
+    nmarkers <- .get_nused_markers(markers, used)
 
     # Checking parameters.
     neighbors <- as.integer(neighbors)
@@ -21,7 +25,7 @@ neighborDistances <- function(x, neighbors=50, downsample=50, as.tol=TRUE, naive
     if (downsample <= 0L) { stop("'downsample' should be a positive integer") }
 
     # Computing distances.
-    distances <- .Call(cxx_get_nndist, cellIntensities(x), cluster.centers, cluster.info, neighbors, downsample) 
+    distances <- .Call(cxx_get_nndist, cellIntensities(x), used, cluster.centers, cluster.info, neighbors, downsample) 
     if (is.character(distances)) {
         stop(distances)
     }
@@ -29,7 +33,7 @@ neighborDistances <- function(x, neighbors=50, downsample=50, as.tol=TRUE, naive
     # Converting to tolerance values, if so desired.
     distances <- t(distances)
     if (as.tol) {
-        distances <- distances/sqrt(length(markers))
+        distances <- distances/sqrt(nmarkers)
     }
     return(distances)
 }

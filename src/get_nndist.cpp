@@ -1,6 +1,6 @@
 #include "objects.h"
 
-SEXP get_nndist(SEXP cells, SEXP centers, SEXP clust_info, SEXP nn, SEXP freq) try {
+SEXP get_nndist(SEXP cells, SEXP use_markers, SEXP centers, SEXP clust_info, SEXP nn, SEXP freq) try {
     if (!isInteger(nn) || LENGTH(nn)!=1) { 
         throw std::runtime_error("number of neighbours must be an integer scalar");
     }
@@ -9,7 +9,7 @@ SEXP get_nndist(SEXP cells, SEXP centers, SEXP clust_info, SEXP nn, SEXP freq) t
         throw std::runtime_error("downsampling frequency must be an integer scalar");
     }
     const size_t downsample=asInteger(freq);
-    finder fx(cells, centers, clust_info);
+    finder fx(cells, use_markers, centers, clust_info);
     const size_t ncells=fx.searcher -> get_ncells();
 
     const size_t true_nrows=(ncells ? 1+int((ncells-1)/downsample) : 0);
