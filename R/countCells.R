@@ -4,7 +4,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 14 November 2016
+# last modified 29 November 2016
 {
     .check_cell_data(x, check.clusters=!naive)
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
@@ -17,9 +17,14 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     }
     samples <- colnames(x)
 
-    # Scaling the distance by the number of parameters. 
-    markers <- rownames(markerData(x))
-    nmarkers <- length(markers)
+    # Scaling the distance by the number of used markers. 
+    markers <- markernames(x)
+    used <- markerData(x)$used
+    if (!is.null(used)) {
+        nmarkers <- sum(used)
+    } else {
+        nmarkers <- length(markers)
+    }
     distance <- tol * sqrt(nmarkers) 
     if (distance <= 0) {
         warning("setting a non-positive distance to a small offset")
@@ -35,7 +40,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 
     # Parallel analysis.
     ci <- cellIntensities(x)
-    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, nsamples=length(samples), 
+    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, markers=used, nsamples=length(samples), 
                     sample.id=sample.id, distance=distance, cluster.centers=cluster.centers, 
                     cluster.info=cluster.info, filter=filter, BPPARAM=BPPARAM)
 
@@ -76,10 +81,10 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     return(output)
 }
 
-.recount_cells <- function(curcells, exprs, nsamples, sample.id, distance, cluster.centers, cluster.info, filter) 
+.recount_cells <- function(exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells, markers, filter) 
 # Helper function so that BiocParallel call is self-contained.
 {
-    out <- .Call(cxx_count_cells, exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells)
+    out <- .Call(cxx_count_cells, exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells, markers)
     if (!is.character(out)) { 
         counts <- out[[1]]
         coords <- out[[2]]

@@ -79,7 +79,7 @@ for (setup in 1:5) {
     obs <- assay(out)
     dimnames(obs) <- NULL
     expect_identical(collected.counts[keep,,drop=FALSE], obs)
-    expect_identical(rowData(out)$center.cell, match(c(paste0("1.", which(to.select1)), paste0("2.", which(to.select2))),
+    expect_identical(rowData(out)$center.cell, match(c(paste0("1.", which(to.select1)), paste0("2.", which(to.select2)))[keep],
         paste0(cellData(cd)$sample.id, ".", cellData(cd)$cell.id)))
 
     med.coords <- intensities(out)
@@ -98,6 +98,23 @@ for (setup in 1:5) {
         cell.indices <- unpackIndices(cellAssignments(out)[r])
         expect_equivalent(assay(out)[r,], tabulate(cellData(out)$sample.id[cell.indices[[1]]], nbin=2))
         expect_identical(packIndices(cell.indices), cellAssignments(out)[r])
+    }
+
+    # Checking the consistency of the counts if only a subset of markers are used.
+    chosen.markers <- c(2, 3, 4)
+    fs.sub <- fs
+    for (f in seq_along(fs.sub)) { fs.sub[[f]] <- fs.sub[[f]][,chosen.markers,drop=FALSE] }
+    suppressWarnings(cd.sub <- prepareCellData(fs.sub))
+    out.sub <- countCells(cd.sub, filter=filter, downsample=downsample, tol=tol)
+    suppressWarnings(cd.sub.2 <- prepareCellData(fs, markers=chosen.markers))
+    out.sub.2 <- countCells(cd.sub.2, filter=filter, downsample=downsample, tol=tol)
+    expect_identical(assay(out.sub), assay(out.sub.2))
+    for (r in seq_along(cellAssignments(out.sub))) {
+        ix1 <- cellData(out.sub)[unpackIndices(cellAssignments(out.sub)[r])[[1]],]
+        ix2 <- cellData(out.sub.2)[unpackIndices(cellAssignments(out.sub.2)[r])[[1]],]
+        ix1 <- ix1[order(ix1$sample.id, ix1$cell.id),]
+        ix2 <- ix2[order(ix2$sample.id, ix2$cell.id),]
+        expect_identical(ix1, ix2)
     }
 }
 

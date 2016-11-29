@@ -1,8 +1,8 @@
 #include "objects.h"
 #include "packer.hpp"
 
-SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP centers, SEXP cluster_info, SEXP curcells) try {
-    finder fx(exprs, centers, cluster_info);
+SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP centers, SEXP cluster_info, SEXP curcells, SEXP curmarks) try {
+    finder fx(exprs, curmarks, centers, cluster_info);
 
     // Checking samples and computing sample weights.
     if (!isInteger(nsamp)|| LENGTH(nsamp)!=1) { throw std::runtime_error("number of samples must be an integer scalar"); }
@@ -39,6 +39,8 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
         throw std::runtime_error("number of markers should be positive");
     }
     const int* cptr=INTEGER(curcells);
+    const std::deque<size_t>& used_markers=fx.searcher->get_used_markers();
+    const size_t& nused=used_markers.size();
    
     // Setting up output vectors. 
     SEXP output=PROTECT(allocVector(VECSXP, 3));
@@ -57,15 +59,17 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
         SET_VECTOR_ELT(output, 1, allocMatrix(REALSXP, N, nmarkers));
         current=VECTOR_ELT(output, 1);
         coord_ptrs.push_back(REAL(current));
-        for (size_t mi=1; mi<nmarkers; ++mi) { 
-            coord_ptrs.push_back(coord_ptrs[mi-1] + N);
+        std::fill(coord_ptrs.back(), coord_ptrs.back()+N, R_NaReal);
+        for (size_t mi=1; mi<nmarkers; ++mi) {
+            coord_ptrs.push_back(coord_ptrs[mi-1]+N);
+            std::fill(coord_ptrs.back(), coord_ptrs.back()+N, R_NaReal);
         }
 
         SET_VECTOR_ELT(output, 2, allocVector(VECSXP, N));
         SEXP cellids=VECTOR_ELT(output, 2);
         std::deque<int> sorted_ids;
 
-        size_t icx, mi;
+        size_t icx, u;
         int si;   
         std::deque<std::pair<double, int> > intensities;
         const double* marker_exprs;
@@ -102,7 +106,8 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP nsamp, SEXP sample_id, SEXP cen
             // Setting the weighted medians (to avoid large samples from dominating the location).
             intensities.resize(collected.size());
             midweight=total_weight/2;
-            for (mi=0; mi<nmarkers; ++mi) {
+            for (u=0; u<nused; ++u) {
+                const size_t& mi=used_markers[u];
 
                 marker_exprs=(fx.searcher->exprs).dptr + mi;
                 for (icx=0; icx<collected.size(); ++icx) {

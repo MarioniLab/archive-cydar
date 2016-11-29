@@ -5,7 +5,7 @@
 #include <queue>
 
 struct naive_holder {
-    naive_holder(SEXP);
+    naive_holder(SEXP, SEXP);
     virtual ~naive_holder();
    
     void find_neighbors(size_t, double, const bool);
@@ -15,10 +15,12 @@ struct naive_holder {
     
     size_t get_ncells() const;
     size_t get_nmarkers() const;
+    const std::deque<size_t>& get_used_markers() const;
     
     virtual void search(const double*, const bool, size_t, double, const bool);
    
     matrix_info exprs;
+    std::deque<size_t> rows_to_use;
     std::deque<size_t> neighbors;
     std::deque<double> distances;
     typedef std::priority_queue<std::pair<double, int> > nearest;
@@ -26,7 +28,7 @@ struct naive_holder {
 };
 
 struct convex_holder : public naive_holder {
-    convex_holder(SEXP, SEXP, SEXP);
+    convex_holder(SEXP, SEXP, SEXP, SEXP);
     ~convex_holder();
     void search(const double*, const bool, size_t, double, const bool);
 
@@ -37,7 +39,7 @@ struct convex_holder : public naive_holder {
 };
 
 struct finder {
-    finder (SEXP, SEXP, SEXP);
+    finder (SEXP, SEXP, SEXP, SEXP);
     ~finder ();
     naive_holder* searcher;
 };
