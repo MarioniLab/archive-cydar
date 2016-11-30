@@ -4,11 +4,10 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
 #
 # written by Aaron Lun
 # created 14 August 2016
-# last modified 29 November 2016    
+# last modified 30 November 2016    
 {
     on.exit({gc()}) # Getting rid of huge memory structures that have built up.
 
-if (!is.matrix(x)) { 
     cell.data <- .pull_out_data(x)
     sample.names <-  cell.data$samples
     marker.names <- cell.data$markers
@@ -17,74 +16,22 @@ if (!is.matrix(x)) {
     exprs <- do.call(rbind, exprs.list)
     sample.id <- rep(seq_along(exprs.list), sapply(exprs.list, nrow))
     cell.id <- unlist(lapply(exprs.list, function(x) { seq_len(nrow(x)) } ), use.names=FALSE)
-} else {
-    sample.names <- attributes(x)$samples
-    if (is.null(sample.names)) stop("'attributes(x)$samples' must contain sample names")
-    marker.names <- colnames(x)
-    if (is.null(marker.names)) stop("column names of 'x' must be marker names")
-    exprs <- x
-    sample.id <- attributes(x)$sample.id
-    if (is.null(sample.id)) stop("'attributes(x)$sample.id' must contain sample IDs for each cell")
-    cell.id <- integer(nrow(x))
-    for (s in seq_along(sample.names)) {
-        in.sample <- sample.id==s
-        cell.id[in.sample] <- seq_len(sum(in.sample))
-    }
-}
 
     # Picking markers to use.
     used <- .chosen_markers(markers, marker.names)
-
-if (!naive) {
-    # K-means clustering.
-    N <- ceiling(sqrt(nrow(exprs)))
-    tryCatch({
-        out <- kmeans(exprs[,used,drop=FALSE], centers=N, ...)
-    }, error=function(e) {
-    }, finally={
-        # Adding jitter, if many cells are duplicated.
-        out <- kmeans(jitter(exprs[,used,drop=FALSE]), centers=N, ...)
-    })
-    by.clust <- split(seq_len(nrow(exprs)), out$cluster)
-    clust.info <- list()
-    new.exprs <- new.samples <- new.cells <- list()
-    accumulated <- 0L
-
-    # Compiling to something that can be quickly accessed at the C++ level.
-    for (clust in seq_len(nrow(out$centers))) {
-        chosen <- by.clust[[clust]]
-        current.vals <- t(exprs[chosen,,drop=FALSE])
-        cur.dist <- sqrt(colSums((out$centers[clust,] - current.vals[used,,drop=FALSE])^2))
-
-        o <- order(cur.dist)
-        new.exprs[[clust]] <- current.vals[,o,drop=FALSE]
-        new.samples[[clust]] <- sample.id[chosen][o]
-        new.cells[[clust]] <- cell.id[chosen][o]
-
-        cur.dist <- cur.dist[o]
-        clust.info[[clust]] <- list(accumulated, cur.dist)
-        accumulated <- accumulated + length(o)
-    }
-   
-    # Filling unused marker columns with NAs, as nrows must be equal to number of markers.
-    if (!all(used)) { 
-        clust.centers <- matrix(NA_real_, nrow(out$centers), length(marker.names))
-        clust.centers[,used] <- out$centers
+    if (naive) { 
+        exprs <- t(exprs)
+        metadata <- list()
     } else {
-        clust.centers <- out$centers
+        reorg <- .reorganize_cells(exprs, sample.id, cell.id, used, ...) 
+        exprs <- reorg$exprs
+        sample.id <- reorg$sample.id
+        cell.id <- reorg$cell.id
+        metadata <- reorg$metadata
     }
-
-    all.exprs <- do.call(cbind, new.exprs)
-    metadata <- list(cluster.centers=t(clust.centers), cluster.info=clust.info)
-    sample.id <- unlist(new.samples)
-    cell.id <- unlist(new.cells)
-} else {
-    all.exprs <- t(exprs)
-    metadata <- list()
-} 
   
     # Collating the output. 
-    cyData(cellIntensities=all.exprs,
+    cyData(cellIntensities=exprs,
            markerData=DataFrame(row.names=marker.names, used=used),
            colData=DataFrame(row.names=sample.names),
            assays=matrix(0L, 0, length(sample.names)),
@@ -92,7 +39,9 @@ if (!naive) {
            metadata=metadata)
 }
 
-.check_cell_data <- function(x, check.clusters=TRUE) {
+.check_cell_data <- function(x, check.clusters=TRUE) 
+# Checks incoming cell data, that it was properly processed by prepareCellData.
+{
     sample.id <- cellData(x)$sample.id
     stopifnot(all(sample.id > 0L & sample.id <= ncol(x)))
 
@@ -124,7 +73,7 @@ if (!naive) {
 }
 
 .pull_out_data <- function(x)
-# Pulling out data so we don't have to rely on ncdfFlowSet.
+# Pulling out data so we don't have to rely on ncdfFlowSet input.
 {
     if (is.list(x)) { 
         sample.names <- names(x)
@@ -148,19 +97,74 @@ if (!naive) {
     return(list(samples=sample.names, markers=marker.names, exprs=expr.val))
 }
 
-.chosen_markers <- function(markers, all.markers) {
-    if (!is.null(markers)) {
+.chosen_markers <- function(chosen.markers, all.markers) 
+# Identifying the markers that were chosen for use.
+{
+    if (!is.null(chosen.markers)) {
         used <- logical(length(all.markers))
-        if (is.character(markers)) {
-            markers <- match(markers, all.markers)
-            if (any(is.na(markers))) {
+        if (is.character(chosen.markers)) {
+            chosen.markers <- match(chosen.markers, all.markers)
+            if (any(is.na(chosen.markers))) {
                 stop("specified 'markers' not in available set of markers")
             }
         }
-        used[markers] <- TRUE
+        used[chosen.markers] <- TRUE
     } else {
         used <- rep(TRUE, length(all.markers))
     }
     return(used)
 }
+
+.reorganize_cells <- function(exprs, sample.id, cell.id, used=NULL, ...) 
+# Reorganizing for fast lookup via K-means clustering.
+{
+    N <- ceiling(sqrt(nrow(exprs)))
+    if (!is.null(used)) { 
+        used.exprs <- exprs[,used,drop=FALSE]
+    } else {
+        used.exprs <- exprs
+    }
+
+    tryCatch({
+        out <- kmeans(used.exprs, centers=N, ...)
+    }, error=function(e) {
+    }, finally={
+        # Adding jitter, if many cells are duplicated.
+        out <- kmeans(jitter(used.exprs), centers=N, ...)
+    })
+    by.clust <- split(seq_len(nrow(exprs)), out$cluster)
+    clust.info <- list()
+    new.exprs <- new.samples <- new.cells <- list()
+    accumulated <- 0L
+
+    # Compiling to something that can be quickly accessed at the C++ level.
+    for (clust in seq_len(nrow(out$centers))) {
+        chosen <- by.clust[[clust]]
+        current.vals <- t(exprs[chosen,,drop=FALSE])
+        cur.dist <- sqrt(colSums((out$centers[clust,] - current.vals[used,,drop=FALSE])^2))
+
+        o <- order(cur.dist)
+        new.exprs[[clust]] <- current.vals[,o,drop=FALSE]
+        new.samples[[clust]] <- sample.id[chosen][o]
+        new.cells[[clust]] <- cell.id[chosen][o]
+
+        cur.dist <- cur.dist[o]
+        clust.info[[clust]] <- list(accumulated, cur.dist)
+        accumulated <- accumulated + length(o)
+    }
+   
+    # Filling unused marker columns with NAs, as nrows must be equal to number of markers.
+    if (!all(used)) { 
+        clust.centers <- matrix(NA_real_, nrow(out$centers), ncol(exprs))
+        clust.centers[,used] <- out$centers
+    } else {
+        clust.centers <- out$centers
+    }
+
+    return(list(exprs=do.call(cbind, new.exprs), 
+                metadata=list(cluster.centers=t(clust.centers), cluster.info=clust.info),
+                sample.id=unlist(new.samples),
+                cell.id=unlist(new.cells)))
+} 
+
 
