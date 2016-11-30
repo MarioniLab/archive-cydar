@@ -28,6 +28,8 @@ SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP pack_indices(SEXP, SEXP);
 
+SEXP renew_indices(SEXP, SEXP);
+
 }
 
 #endif 

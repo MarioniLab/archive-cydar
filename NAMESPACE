@@ -41,6 +41,7 @@ export(countCells,
     interpretSpheres,
     cyData,
     packIndices,
-    unpackIndices
+    unpackIndices,
+    recountCells
 )
 
