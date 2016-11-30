@@ -8,7 +8,6 @@ for (setup in 1:5) {
     # Running our function.
     nmarkers <- 10
     downsample <- 10L
-    downsample <- 10L
     tol <- 0.5
     filter <- 1L
     if (setup==2L) {

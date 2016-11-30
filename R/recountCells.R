@@ -51,36 +51,47 @@ recountCells <- function(x, markers, tol=0.5, downsample=NULL, filter=10, naive=
                               cluster.centers=metadata$cluster.centers, cluster.info=metadata$cluster.info,
                               curcells=which(cell.id%%downsampling[r]==0L)-1L, markers=use.markers, filter=filter)
         if (is.character(out)) stop(out)
-        out$cells <- .renew_indices(idx, out$cells)
-        out$index <- idx[out$index]
+        out$cells <- .renew_indices(idx[cell.id], out$cells)
+        out$index <- idx[cell.id[out$index]]
         combined[[r]] <- out
     }        
     
     # Collating.
     combined.counts <- lapply(combined, "[[", name="counts")
-    combined.coords <- lapply(combined, "[[", name="coords")
     combined.ass <- lapply(combined, "[[", name="cells")
     combined.center <- lapply(combined, "[[", name="index")
     combined.groups <- rep(seq_along(combined), lengths(combined.ass))
 
     combined.counts <- do.call(rbind, combined.counts)
     if (is.null(combined.counts)) combined.counts <- assay(x)[0,,drop=FALSE]
-    combined.coords <- do.call(rbind, combined.coords)
-    if (is.null(combined.coords)) combined.coords <- intensities(x)[0,used,drop=FALSE]
     combined.center <- unlist(combined.center)
     if (is.null(combined.center)) combined.center <- integer(0)
     combined.groups <- unlist(combined.groups)
     if (is.null(combined.groups)) combined.groups <- integer(0)
+    combined.ass <- unlist(combined.ass, recursive=FALSE)
+    
+    # Some care required, to fill up unused values with NAs.
+    combined.coords <- lapply(combined, "[[", name="coords")
+    combined.coords <- do.call(rbind, combined.coords)
+    if (is.null(combined.coords)) { 
+        combined.coords <- intensities(x)[0,,drop=FALSE]
+    } else {
+        total.coords <- matrix(NA_real_, nrow(combined.coords), length(markernames(x)))
+        total.coords[,used] <- combined.coords
+        combined.coords <- total.coords
+        colnames(combined.coords) <- markernames(x)
+    }
 
     # Returning a cyData object.
     cyData(assays=list(counts=combined.counts),
            intensities=combined.coords,
-           cellAssignments=unlist(combined.ass, recursive=FALSE),
-           cellIntensities=my.markers,
-           markerData=markerData(x)[used,,drop=FALSE],
+           cellAssignments=combined.ass,
+           cellIntensities=cellIntensities(x),
+           markerData=cbind(markerData(x), DataFrame(reused=used)),
            cellData=cellData(x),
            rowData=DataFrame(center.cell=combined.center, group=combined.groups),
-           colData=colData(x)
+           colData=colData(x),
+           metadata=list(tol=c(metadata(x)$tol, tol))
            ) 
 }
 

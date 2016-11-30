@@ -40,8 +40,14 @@ Note that the distance calculation uses only the number of markers in \code{mark
 \value{
 A cyData object containing counts and cell assignments for nested hyperspheres.
 This follows the same format as the output from \code{\link{countCells}}, i.e., each row is a hypersphere and each column is a sample.
-However, only information for the specified markers is stored in \code{intensities}, \code{cellIntensities} and \code{markerData}.
-Also, an extra \code{group} field is present in the \code{rowData}, specifying the row of \code{x} corresponding to the group in which each hypersphere is nested.
+Some additional fields are also included:
+\itemize{
+\item An extra \code{group} field is present in the \code{rowData}, specifying the row of \code{x} corresponding to the group in which each hypersphere is nested.
+\item A \code{reused} field is present in \code{markerData}, specifying which markers were used in the re-count.
+\item An integer vector \code{tol} is present in the \code{metadata}, containing the tolerances used to generate \code{x} and that used in re-counting.
+}
+The median intensities per hypersphere in \code{intensities} are only reported for the markers in \code{markers} -- all other values are set to \code{NA}.
+Any existing \code{metadata} or \code{rowData} are discarded, while \code{cellIntensities} and \code{cellData} are unchanged.
 }
 
 \seealso{
