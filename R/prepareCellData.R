@@ -119,7 +119,8 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
 # Reorganizing for fast lookup via K-means clustering.
 {
     N <- ceiling(sqrt(nrow(exprs)))
-    if (!is.null(used)) { 
+    if (is.null(used)) used <- rep(TRUE, ncol(exprs))
+    if (!all(used)) { 
         used.exprs <- exprs[,used,drop=FALSE]
     } else {
         used.exprs <- exprs

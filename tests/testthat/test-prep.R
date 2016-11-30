@@ -54,12 +54,3 @@ expect_identical(assay(out.sub), assay(out.ref))
 expect_identical(as.integer(spec), which(markerData(out.sub)$used))
 expect_identical(markernames(out), markernames(out.sub))
 
-# Trying what happens with a matrix specification.
-incoming <- rbind(all.values1, all.values2)
-attributes(incoming)$samples <- c("X", "Y")
-attributes(incoming)$sample.id <- rep(1:2, c(nrow(all.values1), nrow(all.values2)))
-
-set.seed(900)
-out.mat <- prepareCellData(incoming)
-expect_equal(out.mat, out)
-
