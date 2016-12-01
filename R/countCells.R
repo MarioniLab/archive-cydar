@@ -4,7 +4,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 29 November 2016
+# last modified 1 December 2016
 {
     .check_cell_data(x, check.clusters=!naive)
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
@@ -36,28 +36,27 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
 
     # Parallel analysis.
     ci <- cellIntensities(x)
-    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, markers=used, nsamples=length(samples), 
-                    sample.id=sample.id, distance=distance, cluster.centers=cluster.centers, 
-                    cluster.info=cluster.info, filter=filter, BPPARAM=BPPARAM)
-
-    # Assembling output into a coherent set.
-    out.counts <- out.coords <- out.cells <- out.index <- list()
+    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, markers=used, distance=distance, 
+                    cluster.centers=cluster.centers, cluster.info=cluster.info, filter=filter, 
+                    BPPARAM=BPPARAM)
+    out.cells <- out.index <- list()
     for (i in seq_along(out)) {
         if (is.character(out[[i]])) { stop(out[[i]]) }
-        out.counts[[i]] <- out[[i]]$counts
-        out.coords[[i]] <- out[[i]]$coords
         out.cells[[i]] <- out[[i]]$cells
         out.index[[i]] <- out[[i]]$index
     }
-
-    out.counts <- do.call(rbind, out.counts)
-    colnames(out.counts) <- samples
-    out.coords <- do.call(rbind, out.coords)
-    colnames(out.coords) <- markers
+    out.index <- unlist(out.index, recursive=FALSE)
     out.cells <- unlist(out.cells, recursive=FALSE)
     names(out.cells) <- NULL
-    out.index <- unlist(out.index)
     names(out.index) <- NULL
+
+    # Computing the associated statistics.
+    out.stats <- .Call(cxx_compute_hyperstats, ci, length(samples), sample.id, out.cells, used)
+    if (is.character(out.stats)) stop(out.stats)
+    out.counts <- out.stats[[1]]
+    colnames(out.counts) <- samples
+    out.coords <- out.stats[[2]]
+    colnames(out.coords) <- markers
 
     # Ordering them (not strictly necessary, just for historical reasons).
     o <- order(sample.id[out.index], cell.id[out.index])
@@ -86,20 +85,14 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     return(nmarkers)
 }
 
-.recount_cells <- function(exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells, markers, filter) 
+.recount_cells <- function(exprs, distance, cluster.centers, cluster.info, curcells, markers, filter) 
 # Helper function so that BiocParallel call is self-contained.
 {
-    out <- .Call(cxx_count_cells, exprs, distance, nsamples, sample.id, cluster.centers, cluster.info, curcells, markers)
+    out <- .Call(cxx_count_cells, exprs, distance, cluster.centers, cluster.info, curcells, markers)
     if (!is.character(out)) { 
-        counts <- out[[1]]
-        coords <- out[[2]]
-        cells <- out[[3]]
-        keep <- rowSums(counts) >= filter
-        counts <- counts[keep,,drop=FALSE]
-        coords <- coords[keep,,drop=FALSE]
-        cells <- cells[keep]
-        index <- curcells[keep] + 1L
-        return(list(counts=counts, coords=coords, cells=cells, index=index))
+        cells <- out[[1]]
+        keep <- out[[2]] >= filter
+        return(list(cells=cells[keep], index=curcells[keep]+1L))
     }
     return(out)
 }

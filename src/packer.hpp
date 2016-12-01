@@ -1,5 +1,5 @@
-#ifndef PACKER_H
-#define PACKER_H
+#ifndef PACKER_HPP
+#define PACKER_HPP
 #include "cydar.h"
 
 template<class Iter>
@@ -37,6 +37,30 @@ void pack_index_vector(std::deque<int>& sorted_ids, Iter first, Iter last) {
         }
 
         ++previous;
+    }
+    return;
+}
+
+template<class Iter>
+void unpack_index_vector (std::deque<int>& output, Iter start, Iter end) {
+    output.clear();
+    while (start!=end) {
+        if ((*start) > 0) {
+            if (!output.empty() && (*start) < output.back()) {
+                throw std::runtime_error("absolute values of compressed indices must always increase");
+            }
+            output.push_back(*start);
+        } else if ((*start) < 0) {
+            if (output.empty() || *(start-1) < 0 || output.back() > -(*start)) {
+                throw std::runtime_error("inappropriate negative values in compressed index vector");
+            }
+            while (output.back()!=-(*start)) {
+                output.push_back(output.back()+1);
+            }
+        } else {
+            throw std::runtime_error("zero values in compressed index vector");
+        }
+        ++start;
     }
     return;
 }
