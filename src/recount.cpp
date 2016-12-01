@@ -115,7 +115,6 @@ SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SE
             }
 
             for (kx=0; kx<temp.size(); ++kx) { 
-                if (c==0) {Rprintf("%i\n", temp[kx]);  }
                 in_current_set[--(temp[kx])]=true; // 1-indexing and listing those that are centers.
             }
 
