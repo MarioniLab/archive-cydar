@@ -94,11 +94,5 @@ example(prepareCellData, echo=FALSE)
 downsample <- 10L
 tol <- 0.5
 
-# Running several versions.
 cnt <- countCells(cd, filter=1, downsample=downsample, tol=tol)
-cnt2 <- countCells(cd, filter=1, downsample=downsample, tol=tol, naive=TRUE)
-
-# Checking that they're all the same.
-stopifnot(identical(assay(cnt), assay(cnt2)))
-stopifnot(all.equal(intensities(cnt), intensities(cnt2)))
 }

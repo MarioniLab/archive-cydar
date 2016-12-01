@@ -20,7 +20,9 @@ SEXP get_knn_distance(SEXP, SEXP, SEXP, SEXP);
 
 SEXP compute_density(SEXP, SEXP, SEXP, SEXP);
 
-SEXP count_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP compute_hyperstats(SEXP, SEXP, SEXP, SEXP, SEXP);
+
+SEXP count_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP get_nndist(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
@@ -28,7 +30,7 @@ SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP pack_indices(SEXP, SEXP);
 
-SEXP renew_indices(SEXP, SEXP);
+SEXP recount_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 }
 

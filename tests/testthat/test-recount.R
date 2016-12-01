@@ -19,25 +19,22 @@ fs <- list(A=all.values1, B=all.values2)
 
 # Counting with specified parameters.
 
-for (setup in 1:5) { 
+for (setup in 1:4) { 
     to.use <- rep(c(TRUE, FALSE), each=5)
     filter <- 1L
-    downsample <- NULL
     tol <- 0.5
     if (setup==2L) {
         to.use <- rep(c(TRUE, FALSE), c(8, 2))
     } else if (setup==3L) {
         filter <- 5L
     } else if (setup==4L) {
-        downsample <- 10L
-    } else if (setup==5L) {
         tol <- 1L
     }
     
     suppressWarnings(cd <- prepareCellData(fs, markers=to.use))
     out <- countCells(cd, filter=1L)
     ref.groups <- unpackIndices(cellAssignments(out))
-    rcnt <- recountCells(out, markers=!to.use, filter=filter, downsample=downsample, tol=tol)
+    rcnt <- recountCells(out, markers=!to.use, filter=filter, tol=tol)
 
     expect_identical(cellData(out), cellData(rcnt))
     expect_identical(colData(out), colData(rcnt))
@@ -46,24 +43,47 @@ for (setup in 1:5) {
     expect_identical(!to.use, markerData(rcnt)[,2])
     expect_true(all(rowSums(assay(rcnt))>=filter))
 
-    for (r in seq_len(nrow(rcnt))) {
-        idx <- unpackIndices(cellAssignments(rcnt)[r])[[1]]
-        central <- rowData(rcnt)$center.cell[r]
-
-        # Checking cells are in the specified group.
-        cur.group <- ref.groups[[rowData(rcnt)$group[r]]]
-        expect_true(central %in% cur.group)
-        expect_true(central %in% idx)
-        expect_true(all(idx %in% cur.group))
-
-        # Checking currently assigned cells are correct.
+    # Getting the cells currently in each nested hypersphere.
+    all.ass <- unpackIndices(cellAssignments(out))
+    collected <- list()
+    for (r in seq_len(nrow(out))) {
+        cur.group <- all.ass[[r]]
+        central <- rowData(out)$center.cell[r]
+ 
         centre.point <- cellIntensities(out)[!to.use,central]
         cur.data <- cellIntensities(out)[!to.use,cur.group,drop=FALSE]
         keep <- sqrt(colSums((centre.point - cur.data)^2)) <= sqrt(sum(!to.use)) * tol
-        expect_identical(cur.group[keep], idx)
+        collected[[r]] <- cur.group[keep]
+    } 
 
-        # Checking that they yield the specified counts.
-        expect_equivalent(assay(rcnt)[r,], tabulate(cellData(out)$sample.id[idx], nbin=ncol(out)))
+    # Cross-referencing across hyperspheres.
+    final.collected <- final.center <- final.group <- list()
+    i <- 1L
+    for (r in seq_len(nrow(out))) { 
+        idx <- all.ass[[r]]
+        all.centers <- intersect(idx, rowData(out)$center.cell)
+        for (x in match(all.centers, rowData(out)$center.cell)) { 
+            cur.collected <- intersect(idx, collected[[x]])
+            if (length(cur.collected)< filter) next 
+            final.collected[[i]] <- cur.collected
+            final.center[[i]] <- rowData(out)$center.cell[x]
+            final.group[[i]] <- r
+            i <- i+1L
+        }
+    }
+
+    # Matching up to the observed results.
+    o <- match(paste0(unlist(final.group), ".", unlist(final.center)), 
+               paste0(rowData(rcnt)$group, ".", rowData(rcnt)$center.cell))
+
+    orcnt <- rcnt[o,]
+    expect_identical(unpackIndices(cellAssignments(orcnt)), final.collected)
+    expect_identical(rowData(orcnt)$center.cell, unlist(final.center))
+    expect_identical(rowData(orcnt)$group, unlist(final.group))
+
+    for (r in seq_len(nrow(orcnt))) {
+        expect_identical(unname(assay(orcnt)[r,]), 
+                         tabulate(cellData(orcnt)$sample.id[final.collected[[r]]], ncol(orcnt)))
     }
 }
 
