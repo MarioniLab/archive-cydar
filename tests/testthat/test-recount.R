@@ -36,7 +36,6 @@ for (setup in 1:4) {
     
     suppressWarnings(cd <- prepareCellData(fs, markers=to.use.1))
     out <- countCells(cd, filter=1L)
-    ref.groups <- unpackIndices(cellAssignments(out))
     rcnt <- recountCells(out, markers=to.use.2, tol=tol)
 
     expect_identical(cellData(out), cellData(rcnt))
