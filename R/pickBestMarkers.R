@@ -27,9 +27,9 @@ pickBestMarkers <- function(x, chosen, markers=NULL, downsample=10, p=0.05, naiv
     was.counted <- was.counted[selected]
     
     # Fitting a binomial GLM with LASSO.
-    out <- glmnet(coordinates, # as the marker intensities are the covariates.
-           factor(was.counted), # response is whether it is in or not.
-           family="binomial", intercept=TRUE)
+    out <- glmnet::glmnet(coordinates, # as the marker intensities are the covariates.
+                          factor(was.counted), # response is whether it is in or not.
+                          family="binomial", intercept=TRUE)
 
     # Specifying the ranges with which we will count collections.
     inside <- coordinates[was.counted,,drop=FALSE]

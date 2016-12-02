@@ -14,9 +14,8 @@ neighborDistances <- function(x, neighbors=50, downsample=50, as.tol=TRUE, naive
     }
 
     # Calculating the number of used markers.
-    markers <- markernames(x)
-    used <- markerData(x)$used
-    nmarkers <- .get_nused_markers(markers, used)
+    used <- .chosen_markers(markerData(x)$used, markernames(x))
+    nmarkers <- sum(used)
 
     # Checking parameters.
     neighbors <- as.integer(neighbors)

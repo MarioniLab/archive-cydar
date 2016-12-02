@@ -3,7 +3,6 @@ useDynLib(cydar, .registration=TRUE, .fixes="cxx_")
 import(BiocParallel, SummarizedExperiment, S4Vectors, methods)
 importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
-importFrom("glmnet", glmnet)
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
 importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-")
 
@@ -42,6 +41,7 @@ export(countCells,
     cyData,
     packIndices,
     unpackIndices,
-    recountCells
+    recountCells,
+    meanIntensities
 )
 

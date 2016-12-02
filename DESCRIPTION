@@ -5,10 +5,10 @@ Title: Using Mass Cytometry for Differential Abundance Analyses
 Author: Aaron Lun <alun@wehi.edu.au>
 Maintainer: Aaron Lun <alun@wehi.edu.au>
 Depends: BiocParallel, SummarizedExperiment
-Imports: plotrix, viridis, glmnet, methods, shiny, graphics, 
+Imports: plotrix, viridis, methods, shiny, graphics, 
     grDevices, S4Vectors, flowCore
 Suggests: ncdfFlow, Biobase, testthat, BiocGenerics, knitr, 
-    edgeR, BiocStyle
+    edgeR, limma, glmnet, BiocStyle
 biocViews: FlowCytometry, MultipleComparison, Proteomics 
 Description: Identifies differentially abundant populations 
     between samples and groups in mass cytometry data.

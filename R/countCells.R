@@ -18,9 +18,9 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     samples <- colnames(x)
 
     # Scaling the distance by the number of used markers. 
-    markers <- markernames(x)
-    used <- markerData(x)$used
-    nmarkers <- .get_nused_markers(markers, used)
+    all.markers <- markernames(x)
+    used <- .chosen_markers(markerData(x)$used, all.markers)
+    nmarkers <- sum(used)
     distance <- tol * sqrt(nmarkers) 
     if (distance <= 0) {
         warning("setting a non-positive distance to a small offset")
@@ -56,7 +56,7 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     out.counts <- out.stats[[1]]
     colnames(out.counts) <- samples
     out.coords <- out.stats[[2]]
-    colnames(out.coords) <- markers
+    colnames(out.coords) <- all.markers
 
     # Ordering them (not strictly necessary, just for historical reasons).
     o <- order(sample.id[out.index], cell.id[out.index])
@@ -74,15 +74,6 @@ countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, 
     output$totals <- all.ncells
     metadata(output)$tol <- tol
     return(output)
-}
-
-.get_nused_markers <- function(markers, used) {
-    if (!is.null(used)) {
-        nmarkers <- sum(used)
-    } else {
-        nmarkers <- length(markers)
-    }
-    return(nmarkers)
 }
 
 .recount_cells <- function(exprs, distance, cluster.centers, cluster.info, curcells, markers, filter) 

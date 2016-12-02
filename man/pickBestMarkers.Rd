@@ -26,7 +26,7 @@ We recommend that \code{downsample} also be set to the same value as that used i
 (This ensures that the identified cells are consistent with those that were originally counted.
 It also avoids situations where no cells are counted into hyperspheres for rare subpopulations, which prevents GLM fitting as the response will only have one level.)
 
-Relevant markers are identified by fitting a binomial GLM with LASSO regression to the downsampled cells, using the \code{\link{glmnet}} function.
+Relevant markers are identified by fitting a binomial GLM with LASSO regression to the downsampled cells, using the \code{\link[glmnet]{glmnet}} function.
 The response is whether or not the cell was counted into the hyperspheres (and thus, the subpopulation).
 The covariates are the marker intensities of each cell, used in a simple additive model with an intercept.
 Upon fitting, the markers can be ranked from most to least important in terms of their ability to separate counted from uncounted cells.
@@ -58,7 +58,7 @@ Aaron Lun
 \seealso{
 \code{\link{countCells}},
 \code{\link{prepareCellData}},
-\code{\link{glmnet}}
+\code{\link[glmnet]{glmnet}}
 }
 
 \examples{

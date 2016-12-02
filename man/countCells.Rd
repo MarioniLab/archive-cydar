@@ -95,4 +95,5 @@ downsample <- 10L
 tol <- 0.5
 
 cnt <- countCells(cd, filter=1, downsample=downsample, tol=tol)
+cnt
 }
