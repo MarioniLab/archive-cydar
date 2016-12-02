@@ -5,17 +5,34 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 #
 # written by Aaron Lun
 # created 23 May 2016
-# last modified 29 November 2016
+# last modified 2 December 2016
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
     colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
     coords <- .find_valid_markers(coords, return.matrix=TRUE) # dropping NA markers.
 
-    converted <- prepareCellData(list(X=coords), naive=naive)
-    new.coords <- cellIntensities(converted)
-    cluster.centers <- metadata(converted)$cluster.centers
-    cluster.info <- metadata(converted)$cluster.info
-    hyper.ids <- cellData(converted)$cell.id
+    # Discarding NA pvalues.
+    haspval <- !is.na(pvalues)
+    if (!all(haspval)) {
+        coords <- coords[haspval,,drop=FALSE]
+        pvalues <- pvalues[haspval]
+    }
+
+    # Preparing data for counting.
+    coords <- as.matrix(coords)
+    npts <- nrow(coords)
+    if (!naive) { 
+        converted <- .reorganize_cells(exprs=coords, sample.id=rep(1L, npts), cell.id=seq_len(npts))
+        new.coords <- converted$exprs
+        metadata <- converted$metadata
+        hyper.ids <- converted$cell.id
+    } else {
+        new.coords <- t(coords)
+        hyper.ids <- seq_len(npts)
+        metadata <- list()
+    }
+    cluster.centers <- metadata$cluster.centers
+    cluster.info <- metadata$cluster.info
 
     if (is.null(bandwidth)) { 
         neighbors <- as.integer(neighbors)
@@ -46,7 +63,14 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 
     adjp <- numeric(length(o))
     adjp[o] <- rev(cummin(rev(sum(w)*pvalues/cumsum(w))))
-    pmin(adjp, 1)
+    adjp <- pmin(adjp, 1)
+
+    if (!all(haspval)) {
+        refp <- rep(NA_real_, length(haspval))
+        refp[haspval] <- adjp
+        adjp <- refp
+    }
+    return(adjp)
 }
 
 .find_valid_markers <- function(coords, return.matrix=FALSE) {

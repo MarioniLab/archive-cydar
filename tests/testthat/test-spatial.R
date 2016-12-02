@@ -53,13 +53,22 @@ for (nn in c(10L, 20L, 50L)) {
     names(qval) <- NULL
     expect_equal(x, qval)
 
-    # Checking what happens when we add NAs.
+    # Checking what happens when we add NAs in the columns.
     discarded <- c(1,4,5,6,7)
     subcoords <- coords
     subcoords[,discarded] <- NA
     subx <- spatialFDR(subcoords, pval, neighbors=nn)
     subx.2 <- spatialFDR(coords[,-discarded], pval, neighbors=nn)
     expect_equal(subx, subx.2)
+
+    # Checking what happens when we add NAs in the pvalues.
+    pval.2 <- pval
+    discarded <- c(10, 15, 20, 50)
+    pval.2[discarded] <- NA_real_
+    nax <- spatialFDR(coords, pval.2, neighbors=nn)
+    nax.2 <- spatialFDR(coords[-discarded,], pval[-discarded], neighbors=nn)
+    expect_equal(nax[-discarded], nax.2)
+    expect_true(all(is.na(nax[discarded])))
 }
 
 # Testing silly outputs.
