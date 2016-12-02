@@ -1,24 +1,28 @@
-recountCells <- function(x, markers, tol=0.5, filter=10L)
+recountCells <- function(x, markers, tol=0.5)
 # This function recounts cells in each group in 'x' into a new set of hyperspheres
 # in the specified space of 'markers'.
 #
 # written by Aaron Lun
 # created 30 November 2016
-# last modified 1 December 2016
+# last modified 2 December 2016
 {
-    all.assign <- cellAssignments(x)
-    used <- .chosen_markers(markers, markernames(x))
-    ci <- cellIntensities(x)
-    distance <- tol*sqrt(sum(used))
-    filter <- as.integer(filter)
-  
+    old.used <- .chosen_markers(markerData(x)$used, markernames(x))
+    old.distance <- metadata(x)$tol*sqrt(sum(old.used)) # distance used to construct 'x'.
+    used <- old.used | .chosen_markers(markers, markernames(x))
+    sq.total.nmarkers <- sqrt(sum(used))
+    distance <- tol*sq.total.nmarkers # combined distance.
+    eff.tol <- old.distance/sq.total.nmarkers
+    if (distance >  old.distance) {
+        warning("effective tol is ", round(eff.tol, 3), ", not the specified ", round(tol, 3))
+        distance <- old.distance # because we can't count things that were missed in original counting of 'x'.
+    }
+   
     # Collating values. 
-    out <- .Call(cxx_recount_cells, ci, used, distance, rowData(x)$center.cell-1L, all.assign, filter)
+    all.assign <- cellAssignments(x)
+    ci <- cellIntensities(x) 
+    out <- .Call(cxx_recount_cells, ci, used, distance, rowData(x)$center.cell-1L, all.assign)
     if (is.character(out)) stop(out)
-    combined.ass <- unlist(out[[1]], recursive=FALSE)
-    combined.centers <- out[[2]]
-    combined.groups <- rep(seq_len(nrow(x)), lengths(combined.centers))
-    combined.centers <- unlist(combined.centers)
+    combined.ass <- out[[1]]
 
     # Computing assorted statistics.
     nsamples <- ncol(x)
@@ -33,16 +37,16 @@ recountCells <- function(x, markers, tol=0.5, filter=10L)
 
     # Returning a cyData object.
     new.markerdata <- markerData(x)
-    new.markerdata$reused <- used
+    new.markerdata$used <- used 
     new.metadata <- metadata(x)
-    new.metadata$retol <- tol
+    new.metadata$tol <- eff.tol
     cyData(assays=list(counts=combined.counts),
            intensities=combined.coords,
            cellAssignments=combined.ass,
            cellIntensities=cellIntensities(x),
            markerData=new.markerdata,
            cellData=cellData(x),
-           rowData=DataFrame(center.cell=combined.centers, group=combined.groups),
+           rowData=rowData(x),
            colData=colData(x),
            metadata=new.metadata
            ) 

@@ -30,7 +30,7 @@ SEXP drop_redundant(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP pack_indices(SEXP, SEXP);
 
-SEXP recount_cells(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP recount_cells(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 }
 

@@ -5,50 +5,52 @@
 \description{Count the number of cells in hyperspheres across a specified marker space, nested within pre-defined groups of cells.}
 
 \usage{
-recountCells(x, markers, tol=0.5, filter=10L)
+recountCells(x, markers, tol=0.5)
 }
 
 \arguments{
 \item{x}{A cyData object containing cell assignments into hyperspheres, such as that produced by \code{\link{countCells}}.}
 \item{markers}{A vector specifying the markers for which hyperspheres should be constructed.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius.}
-\item{filter}{An integer scalar specifying the minimum count sum required to report a hypersphere.} 
 }
 
 \details{
 Each row of \code{x} corresponds to an existing hypersphere across some high-dimensional space, to which a set of cells are assigned.
-This function takes this set of cells and assigns them into hyperspheres in dimensions specified by \code{markers}.
-Thus, these new hyperspheres are \dQuote{nested} within the existing hypersphere, because only the cells in the latter are assigned into the former.
-The counts and cell assignments for the nested hyperspheres are then reported in an output cyData object.
+This function extends the hypersphere into the dimensions specified by \code{markers}.
+Thus, each new hypersphere is \dQuote{nested} within the existing hypersphere in \code{x}.
+Only the cells in the latter are assigned into the former
+(though obviously, some cells will not be assigned if they are too distant from the centre in the new dimensions).
 
-This function is useful in situations where the markers have different purposes.
-For example, \code{x} could be constructed using only markers that define cell type.
-This yields groups of cells that correspond to putative cell types.
+This function allows for fast recounting in situations where the markers have different purposes.
+For example, \code{x} could be constructed using cell type-specific markers to define cell types.
 \code{recountCells} can then be applied with \code{markers} that define, e.g., the activation status within each cell type.
 In general, it is most interesting to use \code{markers} that were \emph{not} used to construct \code{x}.
 Otherwise, by definition, all the cells in each hypersphere would have similar marker intensities.
+}
 
-To speed up the search, this function will only construct nested hyperspheres that are centered on the same cells as the hyperspheres in \code{x}.
-This reduces the amount of distance re-calculations that are required.
-However, hyperspheres that are not in \code{x} will not be considered as centres of nested hyperspheres.
-This is generally fine if \code{x} has only been subjected to simple filtering based on average abundance.
-In such cases, this missing hyperspheres will be of low abundance and would be removed by \code{filter} anyway.
+\section{Note on the radius calculation}{
+The output of this function is designed to be equivalent to directly running \code{\link{countCells}} with both new and old markers.
+However, to speed up the counting, only the cells already assigned to each hypersphere in \code{x} are considered for re-counting.
+This has some consequences for the results, as the radius scales with respect to \code{tol} and the number of markers.
 
-The \code{tol} and \code{filter} arguments are interpreted as described for \code{\link{countCells}}.
-Note that the distance calculation uses only the number of markers in \code{markers}, not the full marker space used to construct \code{x}.
+Specifically, when new markers are specified in \code{markers}, the radius must increase to accommodate the increase in dimensions.
+However, the cells were originally counted with a radius proportional to the (square root of the) old number of markers and \code{metadata(x)$tol}.
+If the radius now increases, but only pre-assigned cells are used for re-counting, then there will be cells that are missed in the re-counts.
+
+Thus, to preserve equivalence with \code{\link{countCells}} output, \code{tol} is decreased so that the radius does not change with new \code{markers}.
+This shows up as a warning specifying the effective tolerance that was used in during re-counting.
+Users can also avoid this problem by using a higher radius when constructing \code{x}, such that the radius calculated from the \code{tol} here will be smaller.
 }
 
 \value{
 A cyData object containing counts and cell assignments for nested hyperspheres.
 This follows the same format as the output from \code{\link{countCells}}, i.e., each row is a hypersphere and each column is a sample.
-Some additional fields are also included:
+Some fields are modified:
 \itemize{
-\item An extra \code{group} field is present in the \code{rowData}, specifying the row of \code{x} corresponding to the group in which each hypersphere is nested.
-\item A \code{reused} field is present in \code{markerData}, specifying which markers were used in the re-count.
-\item An integer scalar \code{retol} is present in the \code{metadata}, containing the tolerances used in re-counting.
+\item \code{counts}, \code{intensities} and \code{cellAssignments} contain the relevant values for the nested hyperspheres.
+\item The \code{used} field in \code{markerData} is set to all markers used in both the original and re-counting.
+\item The \code{tol} value in the \code{metadata} is set to the (effective) tolerance used in re-counting.
 }
-The median intensities per hypersphere in \code{intensities} are only reported for the markers in \code{markers} -- all other values are set to \code{NA}.
-Any existing \code{metadata} or \code{rowData} are preserved, while \code{cellIntensities} and \code{cellData} are unchanged.
 }
 
 \seealso{

@@ -11,7 +11,7 @@ static const R_CallMethodDef all_call_entries[] = {
     REGISTER(get_nndist, 6),
     REGISTER(drop_redundant, 5),
     REGISTER(pack_indices, 2),
-    REGISTER(recount_cells, 6),
+    REGISTER(recount_cells, 5),
     {NULL, NULL, 0}
 };
 
