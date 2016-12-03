@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "objects.h"
 
-SEXP compute_mean_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments, SEXP curmarks) try {
+SEXP compute_median_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments, SEXP curmarks) try {
     // Setting up inputs.
     finder fx(exprs, curmarks, R_NilValue, R_NilValue);
     const matrix_info& EXPRS=fx.searcher->exprs;
@@ -54,10 +54,9 @@ SEXP compute_mean_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments, 
         std::deque<int> collected;
         size_t icx;
 
-        std::deque<std::deque<double> > mean_ints(nsamples, std::deque<double>(nused));
-        std::deque<int> totals(nsamples);
+        std::deque<std::deque<double> > all_intensities(nsamples);
         const double* curpoint;
-        size_t i;
+        size_t mid;
 
         for (int g=0; g<ngroups; ++g) {
             // Unpacking the assignments.
@@ -75,32 +74,31 @@ SEXP compute_mean_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments, 
                 }
             }
                 
-            for (i=0; i<nsamples; ++i) { std::fill(mean_ints[i].begin(), mean_ints[i].end(), 0); }
-            std::fill(totals.begin(), totals.end(), 0);
-            
-            // Computing the summed mean intensities of everything.
-            for (icx=0; icx<collected.size(); ++icx) {
-                const int& curdex=collected[icx];
-                const int& cursample=sample_ids[curdex];
-                std::deque<double>& my_ints=mean_ints[cursample];
-                curpoint=eptr + curdex*nmarkers;
-
-                for (u=0; u<nused; ++u) {
-                    my_ints[u] += curpoint[used_markers[u]];
-                }
-                ++(totals[cursample]);
-            }
-
-            // Setting the output.
+            // Computing the median intensity.
             for (u=0; u<nused; ++u) {
-                for (i=0; i<nsamples; ++i) {
-                    if (totals[i]) { 
-                        outptrs[u][i][g]=mean_ints[i][u]/totals[i];
-                    } else {
-                        outptrs[u][i][g]=R_NaReal;
-                    }
+                curpoint = eptr + used_markers[u];
+
+                for (icx=0; icx<collected.size(); ++icx) {
+                    const int& curdex=collected[icx];
+                    all_intensities[sample_ids[curdex]].push_back(*(curpoint + curdex*nmarkers));
                 }
-            } 
+
+                for (s=0; s<nsamples; ++s) {
+                    std::deque<double>& curint=all_intensities[s];
+                    if (curint.empty()) {
+                        outptrs[u][s][g]=R_NaReal;
+                        continue;
+                    }
+                    std::sort(curint.begin(), curint.end());
+                    mid=size_t(curint.size()/2);
+                    if (curint.size()%2==0) { 
+                        outptrs[u][s][g]=(curint[mid]+curint[mid-1])/2;
+                    } else {
+                        outptrs[u][s][g]=curint[mid];
+                    }
+                    curint.clear();
+                }
+            }
         }
     } catch (std::exception& e) {
         UNPROTECT(1);

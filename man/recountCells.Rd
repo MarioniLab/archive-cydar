@@ -26,6 +26,8 @@ For example, \code{x} could be constructed using cell type-specific markers to d
 \code{recountCells} can then be applied with \code{markers} that define, e.g., the activation status within each cell type.
 In general, it is most interesting to use \code{markers} that were \emph{not} used to construct \code{x}.
 Otherwise, by definition, all the cells in each hypersphere would have similar marker intensities.
+
+Also see \code{\link{medIntensities}} for a discussion of strategies to use when markers can be separated into two distinct sets.
 }
 
 \section{Note on the radius calculation}{
@@ -54,7 +56,8 @@ Some fields are modified:
 }
 
 \seealso{
-\code{\link{countCells}}
+\code{\link{countCells}},
+\code{\link{medIntensities}}
 }
 
 \author{

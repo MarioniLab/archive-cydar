@@ -42,6 +42,6 @@ export(countCells,
     packIndices,
     unpackIndices,
     recountCells,
-    meanIntensities
+    medIntensities
 )
 

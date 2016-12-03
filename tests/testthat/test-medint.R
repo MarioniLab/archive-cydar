@@ -33,7 +33,7 @@ for (setup in 1:4) {
     
     suppressWarnings(cd <- prepareCellData(fs, markers=to.use))
     out <- countCells(cd, filter=1L)
-    rcnt <- meanIntensities(out, markers=!to.use)
+    rcnt <- medIntensities(out, markers=!to.use)
 
     expect_identical(assay(out, "counts"), assay(rcnt, "counts"))
     expect_identical(cellData(out), cellData(rcnt))
@@ -44,7 +44,7 @@ for (setup in 1:4) {
     
     ref.groups <- unpackIndices(cellAssignments(out))
     for (u in which(!to.use)) { 
-        cur.assay <- assay(rcnt, paste0("mean.", markernames(rcnt)[u]))
+        cur.assay <- assay(rcnt, paste0("med.", markernames(rcnt)[u]))
         ref.assay <- matrix(NA_real_, length(ref.groups), ncol(rcnt))
         colnames(ref.assay) <- sampleNames(rcnt)
         sample.names <- sampleNames(rcnt)[cellData(rcnt)$sample.id]
@@ -54,7 +54,7 @@ for (setup in 1:4) {
             by.sample <- split(cur.group, sample.names[cur.group])
 
             for (s in names(by.sample)) { 
-                ref.assay[r,s] <- mean(cellIntensities(rcnt)[u,by.sample[[s]]])
+                ref.assay[r,s] <- median(cellIntensities(rcnt)[u,by.sample[[s]]])
             }
         }
         expect_equal(ref.assay, cur.assay)

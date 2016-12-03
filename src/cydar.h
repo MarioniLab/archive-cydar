@@ -32,7 +32,7 @@ SEXP pack_indices(SEXP, SEXP);
 
 SEXP recount_cells(SEXP, SEXP, SEXP, SEXP, SEXP);
 
-SEXP compute_mean_int(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP compute_median_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 }
 
