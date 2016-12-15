@@ -45,6 +45,7 @@ export(countCells,
     recountCells,
     medIntensities,
     poolCells,
-    outlierGate
+    outlierGate,
+    dnaGate
 )
 
