@@ -5,6 +5,7 @@ importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
 importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-")
+importFrom("flowCore", rectangleGate, polygonGate)
 
 importFrom("graphics", plot, points, lines, par, polygon, text)
 importFrom("shiny", 
@@ -42,6 +43,8 @@ export(countCells,
     packIndices,
     unpackIndices,
     recountCells,
-    medIntensities
+    medIntensities,
+    poolCells,
+    outlierGate
 )
 
