@@ -52,7 +52,7 @@ sample.names <- paste0("Y", seq_len(nsamples))
 
 x <- list()
 for (i in sample.names) {
-    ex <- matrix(rgamma(nmarkers*1000, 2, 2), ncol=nmarkers, nrow=1000)
+    ex <- matrix(rexp(nmarkers*1000, 0.01), ncol=nmarkers, nrow=1000)
     colnames(ex) <- marker.names
     x[[i]] <- ex
 }
@@ -64,6 +64,6 @@ ff
 ### Using for estimation: ###
 library(flowCore)
 trans <- estimateLogicle(ff, colnames(ff))
-gate <- outlierGate(ff, "X1")
+ff <- transform(ff, trans) # or, apply to original data.
 }
 
