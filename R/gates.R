@@ -30,7 +30,8 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"))
 # This assumes that most events correspond to singlets.
 #
 # written by Aaron Lun
-# created 15 December 2016    
+# created 15 December 2016   
+# last modified 2 January 2017 
 {
     ex1 <- exprs(x)[,name1]
     bound1 <- .get_LR_bounds(ex1, nmads=nmads)
@@ -41,12 +42,16 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"))
     bound2 <- .get_LR_bounds(ex2, nmads=nmads)
     lower.dna2 <- bound2$left
     upper.dna2 <- bound2$right
-    
+   
+    # Calculating the equality line
+    fit <- lm(ex2 ~ ex1)
+    grad.par <- coef(fit)[2]
+    intercept <- coef(fit)[1]
+
     # Calculating the lines corresponding to the boundaries.
-    grad.par <- (upper.dna2 - lower.dna2) / (upper.dna1 - lower.dna1)
-    intercept <- lower.dna2 - grad.par * lower.dna1
-    lower.int.par <- intercept - tol
-    upper.int.par <- intercept + tol
+    adj <- sqrt(1 + grad.par^2) # grad = tan(theta) -> sec(theta) to convert Euclidean distance from line to y-intercept shift.
+    lower.int.par <- intercept - tol * adj
+    upper.int.par <- intercept + tol * adj
 
     grad.per <- -1/grad.par
     lower.int.per <- lower.dna2 - grad.per*lower.dna1
