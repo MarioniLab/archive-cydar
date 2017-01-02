@@ -3,9 +3,10 @@ useDynLib(cydar, .registration=TRUE, .fixes="cxx_")
 import(BiocParallel, SummarizedExperiment, S4Vectors, methods)
 importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
-importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm)
-importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-")
+importFrom("stats", coef, kmeans, median, quantile, lm.fit, approxfun, density, approx, lm, mad)
+importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-", exprs)
 importFrom("flowCore", rectangleGate, polygonGate, flowFrame)
+importFrom("Biobase", AnnotatedDataFrame)
 
 importFrom("graphics", plot, points, lines, par, polygon, text)
 importFrom("shiny", 

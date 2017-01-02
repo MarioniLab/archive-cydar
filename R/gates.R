@@ -24,7 +24,7 @@ outlierGate <- function(x, name, nmads=3, type=c("both", "upper", "lower"))
     rectangleGate(filterId=paste0(name, "_outlierGate"), .gate=gate) 
 }
 
-dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"))
+dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), ...)
 # Constructs a gate to remove non-cells, doublets, and
 # cells with differences in the two DNA channels.
 # This assumes that most events correspond to singlets.
@@ -34,12 +34,12 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"))
 # last modified 2 January 2017 
 {
     ex1 <- exprs(x)[,name1]
-    bound1 <- .get_LR_bounds(ex1, nmads=nmads)
+    bound1 <- .get_LR_bounds(ex1, nmads=nmads, ...)
     lower.dna1 <- bound1$left
     upper.dna1 <- bound1$right
 
     ex2 <- exprs(x)[,name2]
-    bound2 <- .get_LR_bounds(ex2, nmads=nmads)
+    bound2 <- .get_LR_bounds(ex2, nmads=nmads, ...)
     lower.dna2 <- bound2$left
     upper.dna2 <- bound2$right
    
@@ -71,13 +71,13 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"))
     polygonGate(filterId="dnaGate", .gate=all.vertices)
 }
 
-.get_LR_bounds <- function(x, nmads) {
+.get_LR_bounds <- function(x, nmads, ...) {
     center <- median(x)
     dev <- mad(x, center=center)
     ref.lower <- center - nmads*dev
     ref.upper <- center + nmads*dev
 
-    dens <- density(x)
+    dens <- density(x, ...)
     max.x <- which.max(dens$y)
     first.deriv <- diff(dens$y)
     local.min <- which(c(TRUE, first.deriv < 0) & c(first.deriv > 0, TRUE))
