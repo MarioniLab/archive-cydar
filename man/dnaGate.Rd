@@ -7,7 +7,8 @@ Construct a gate to remove debris and doublets, based on the two DNA (iridium) c
 }
 
 \usage{
-dnaGate(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), ...)
+dnaGate(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
+    shoulder=FALSE, ...)
 }
 
 \arguments{
@@ -16,6 +17,7 @@ dnaGate(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), ...)
 \item{tol}{A numeric scalar quantifying the maximum distance from the equality line.}
 \item{nmads}{A numeric scalar specifying the number of median absolute deviations (MADs) beyond which an event can be considered an outlier.}
 \item{type}{A string specifying the type of gating to be performed.}
+\item{shoulder}{A logical scalar indicating whether the function should attempt to detect shoulders.}
 \item{...}{Additional arguments to pass to \code{\link{density}}, to fine-tune identification of local minima.}
 }
 
@@ -31,9 +33,10 @@ If this alternative is larger than the largest local minima below the mode, it i
 This avoids using a poor lower bound when there are no obvious minima in the distribution.
 Similarly, an alternative upper bound is defined at \code{nmads} MADs above the median, and is used if it is smaller than the smallest local minima above the mode. 
 
-If \code{type="lower"}, the upper bound is set to an arbitrarily large value and effectively ignored during gating.
-This should be used in cases where there is no clear bimodality in the intensity distribution.
-In such cases, it may not be feasible to distinguish between singlets and doublets, e.g., if the mean shift is dominated by noise.
+For some data sets, there may not be any clear bimodality in the intensity distribution, e.g., if the mean shift is dominated by noise.
+If \code{shoulder=TRUE}, the function will attempt to identify the doublet peak as a \dQuote{shoulder} off the singlet peak.
+Alternatively, if there is no evidence for separate singlet/doublet peaks, it may not be feasible (or desirable) to try to distinguish them.
+In such cases, users can set \code{type="lower"}, whereby the upper bound is set to an arbitrarily large value and effectively ignored during gating.
 
 To simultaneously gate on both DNA channels, we fit a line to the paired intensities for all events, i.e., the \dQuote{equality line}.
 Two perpendicular lines passing through the paired lower/upper bounds are constructed.
@@ -60,7 +63,9 @@ Aaron Lun
 }
 
 \examples{
-### Mocking up some data: ###
+set.seed(200)
+
+### Mocking up some data with clear bimodality: ###
 library(flowCore)
 singlets <- rnorm(20000, 2, 0.2)
 dna1 <- matrix(rnorm(40000, singlets, 0.1), ncol=2)
@@ -72,6 +77,20 @@ ff <- flowFrame(dna.int)
 
 ### Defining the gate: ###
 dgate <- dnaGate(ff, "Ir191", "Ir193")
+smoothScatter(dna.int[,1], dna.int[,2])
+polygon(dgate@boundaries[,1], dgate@boundaries[,2], border="red")
+
+### Mocking up some data with no obvious bimodality: ###
+singlets <- rnorm(20000, 2, 0.2)
+dna1 <- matrix(rnorm(40000, singlets, 0.1), ncol=2)
+doublets <- rnorm(10000, 2.5, 0.2) # <- less separation between modes
+dna2 <- matrix(rnorm(20000, doublets, 0.1), ncol=2)
+dna.int <- rbind(dna1, dna2)
+colnames(dna.int) <- c("Ir191", "Ir193")
+ff <- flowFrame(dna.int)
+
+### Defining the gate: ###
+dgate <- dnaGate(ff, "Ir191", "Ir193", shoulder=TRUE)
 smoothScatter(dna.int[,1], dna.int[,2])
 polygon(dgate@boundaries[,1], dgate@boundaries[,2], border="red")
 }

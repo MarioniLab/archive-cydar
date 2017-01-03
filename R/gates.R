@@ -24,7 +24,8 @@ outlierGate <- function(x, name, nmads=3, type=c("both", "upper", "lower"))
     rectangleGate(filterId=paste0(name, "_outlierGate"), .gate=gate) 
 }
 
-dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), ...)
+dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
+                    shoulder=FALSE, ...)
 # Constructs a gate to remove non-cells, doublets, and
 # cells with differences in the two DNA channels.
 # This assumes that most events correspond to singlets.
@@ -34,12 +35,12 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
 # last modified 2 January 2017 
 {
     ex1 <- exprs(x)[,name1]
-    bound1 <- .get_LR_bounds(ex1, nmads=nmads, ...)
+    bound1 <- .get_LR_bounds(ex1, nmads=nmads, shoulder=shoulder, ...)
     lower.dna1 <- bound1$left
     upper.dna1 <- bound1$right
 
     ex2 <- exprs(x)[,name2]
-    bound2 <- .get_LR_bounds(ex2, nmads=nmads, ...)
+    bound2 <- .get_LR_bounds(ex2, nmads=nmads, shoulder=shoulder, ...)
     lower.dna2 <- bound2$left
     upper.dna2 <- bound2$right
    
@@ -71,7 +72,7 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
     polygonGate(filterId="dnaGate", .gate=all.vertices)
 }
 
-.get_LR_bounds <- function(x, nmads, ...) {
+.get_LR_bounds <- function(x, nmads, shoulder, ...) {
     dens <- density(x, ...)
     max.x <- which.max(dens$y)
     mode.x <- dens$x[max.x]
@@ -83,11 +84,20 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
 
     first.deriv <- diff(dens$y)
     local.min <- which(c(TRUE, first.deriv <= 0) & c(first.deriv >= 0, TRUE))
-
     lower <- dens$x[max(local.min[local.min < max.x])]
     if (lower < ref.lower) lower <- ref.lower
-    upper <- dens$x[min(local.min[local.min > max.x])]
+
+    # Deciding if we should try to look for a shoulder as the upper bound.
+    if (shoulder) {
+        second.deriv <- c(0, diff(first.deriv), 0)
+        above.mode <- seq(from=max.x, to=length(dens$x))
+        d2.above <- second.deriv[above.mode] 
+        upper <- dens$x[above.mode[which.max(d2.above)]] # point of maximal acceleration.
+    } else {
+        upper <- dens$x[min(local.min[local.min > max.x])]
+    }
     if (upper > ref.upper) upper <- ref.upper
+
     return(list(left=lower, right=upper))
 }
 
