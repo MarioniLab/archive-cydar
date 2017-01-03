@@ -25,10 +25,11 @@ Local minima of density that neighbour the global mode are identified.
 To remove debris, the lower bound is set to the largest local minima that is smaller than the global mode.
 To remove doublets, the upper bound is set to the smallest local minima that is larger than the mode.
 
-We also consider an alternative lower bound at \code{nmads} MADs below the median of the intensity distribution.
-If this is larger than the largest local minima, it is used as the lower bound instead.
+We also consider an alternative lower bound at \code{nmads} MADs below the global mode.
+(Here, the MAD is computed using only values below the mode, to avoid potential inflation due to a doublet peak.)
+If this alternative is larger than the largest local minima below the mode, it is used as the lower bound instead.
 This avoids using a poor lower bound when there are no obvious minima in the distribution.
-Similarly, an alternative upper bound is defined at \code{nmads} MADs above the median, and is used if it is smaller than the smallest local minima. 
+Similarly, an alternative upper bound is defined at \code{nmads} MADs above the median, and is used if it is smaller than the smallest local minima above the mode. 
 
 If \code{type="lower"}, the upper bound is set to an arbitrarily large value and effectively ignored during gating.
 This should be used in cases where there is no clear bimodality in the intensity distribution.

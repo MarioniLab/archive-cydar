@@ -72,15 +72,17 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
 }
 
 .get_LR_bounds <- function(x, nmads, ...) {
-    center <- median(x)
-    dev <- mad(x, center=center)
-    ref.lower <- center - nmads*dev
-    ref.upper <- center + nmads*dev
-
     dens <- density(x, ...)
     max.x <- which.max(dens$y)
+    mode.x <- dens$x[max.x]
+
+    lower.pts <- x[x < mode.x] 
+    dev <- median(mode.x - lower.pts) * 1.4826 # i.e., MAD using only the lower half of the distribution
+    ref.lower <- mode.x - nmads*dev
+    ref.upper <- mode.x + nmads*dev
+
     first.deriv <- diff(dens$y)
-    local.min <- which(c(TRUE, first.deriv < 0) & c(first.deriv > 0, TRUE))
+    local.min <- which(c(TRUE, first.deriv <= 0) & c(first.deriv >= 0, TRUE))
 
     lower <- dens$x[max(local.min[local.min < max.x])]
     if (lower < ref.lower) lower <- ref.lower
