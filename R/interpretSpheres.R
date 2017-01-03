@@ -1,9 +1,10 @@
-interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6, plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)   
+interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6, plot.height=100, xlim=NULL, 
+                             p=0.01, add.plot=NULL, add.plot.height=500, run=TRUE, ...)   
 # This creates a Shiny app to assist interpretation of the hyperspheres.
 #
 # written by Aaron Lun
 # created 1 November 2016    
-# last modified 14 November 2016
+# last modified 3 December 2017
 {
     coords <- intensities(x)
     nrows <- ceiling(ncol(coords)/num.per.row)
@@ -12,6 +13,8 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
 
     coords <- as.matrix(coords)
     N <- nrow(coords)
+    cell.int <- cellIntensities(x)
+    cell.assign <- cellAssignments(x)
 
     # Checking marker order.
     if (!is.null(markers)) { 
@@ -38,57 +41,71 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
     collected$labels <- labels
 
     collected$current <- 1
+    collected$interval <- 0
     collected$history <- rep(NA_integer_, 5)
     all.dens <- .prepareDensity(x, ...)
 
+    # Main panel arguments.
+    main.args <- list(plotOutput("histograms", height = plot.height), hr())
+    main.args <- append(main.args, 
+                        list(
+                             fluidRow(
+                                      column(
+                                             textInput("label", "Label:"),
+                                             actionButton("addlabel", "Add label"),
+                                             width=4
+                                             ),
+                                      column(
+                                             textInput("gotonum", "Go to sphere:"),
+                                             actionButton("go", "Go"),
+                                             actionButton("previous", "Previous"),
+                                             actionButton("continue", "Next"),
+                                             width=4
+                                             ),
+                                      column( 
+                                             actionButton("finish", "Save to R"),
+                                             width=4
+                                             )
+                                      )
+                             )
+                        )
+    if (!is.null(add.plot)) {
+        main.args <- append(main.args, list(hr(), plotOutput("addplots", height = add.plot.height)))
+    }
+
     # Generating the page layout.
     ui <- pageWithSidebar(
-                    headerPanel("Interpreting hypersphere coordinates"),
-                    sidebarPanel(
-                                 h4("Metrics"),
-                                 tableOutput("metrics"),
-                                 hr(size=30),
-                                 h4("History:"),
-                                 tableOutput("history"), 
-                                 hr(size=30),
-                                 h4("Closest labelled:"),
-                                 tableOutput("closest"), 
-                                 hr(size=30),
-                                 textInput("extraplot", "Add more hyperspheres:", value=""),
-                                 actionButton("addtoplot", "Add to plot"),
-                                 actionButton("clearplot", "Clear")
-                                 ),
-                    mainPanel(
-                              plotOutput("histograms", height = plot.height), 
-                              hr(),
-                              fluidRow(
-                                       column(
-                                              textInput("label", "Label:"),
-                                              actionButton("addlabel", "Add label"),
-                                              width=4
-                                              ),
-                                       column(
-                                              textInput("gotonum", "Go to sphere:"),
-                                              actionButton("go", "Go"),
-                                              actionButton("previous", "Previous"),
-                                              actionButton("continue", "Next"),
-                                              width=4
-                                              ),
-                                       column( 
-                                              actionButton("finish", "Save to R"),
-                                              width=4
-                                              )
-                                       )
-                              )
-                     )
+                          headerPanel("Interpreting hypersphere coordinates"),
+                          sidebarPanel(
+                                       h4("Metrics"),
+                                       tableOutput("metrics"),
+                                       hr(size=30),
+                                       h4("History:"),
+                                       tableOutput("history"), 
+                                       hr(size=30),
+                                       h4("Closest labelled:"),
+                                       tableOutput("closest"), 
+                                       hr(size=30),
+                                       sliderInput("intbar", "Intensity interval for current hypersphere (%):",
+                                                   min = 0, max = 100, value = 95),
+                                       textInput("extraplot", "Add more hyperspheres:", value=""),
+                                       actionButton("addtoplot", "Add to plot"),
+                                       actionButton("clearplot", "Clear")
+                                       ),
+                          do.call(mainPanel, main.args)
+                          )
 
     # Setting up updating functions.
     updatePlot <- function(output, extras=NULL) {
         output$histograms <- renderPlot({
             par(mfrow=c(nrows, num.per.row), mar=c(2.1, 1.1, 2.1, 1.1))
             .generateDensity(coords, all.dens, xlim=xlim, collim=collim, ordering=m.order,
-                             current=collected$current, extras=extras) 
+                             current=collected$current, extras=extras, 
+                             interval=collected$interval, cell.int=cell.int, cell.assign=cell.assign)
         })
+        if (!is.null(add.plot)) {
+            output$addplots <- renderPlot({ add.plot(collected$current, x) }) 
+        }
     }
 
     updateMetrics <- function(output) {
@@ -171,6 +188,11 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
             updateClosest(output)  
         })
 
+        observeEvent(input$intbar, {
+            collected$interval <- input$intbar/100
+            updatePlot(output)
+        })
+
         observeEvent(input$go, {
             candidate <- as.integer(input$gotonum)
             if (is.finite(candidate) && candidate >= 1L && candidate <= N) {
@@ -234,12 +256,20 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
     return(collected)
 }
 
-.generateDensity <- function(coords, density.data, ordering, collim, xlim, current, extras, ...) 
+.generateDensity <- function(coords, density.data, ordering, collim, xlim, current, extras, 
+                             interval, cell.int, cell.assign, ...) 
 # Plotting the densities and adding the point corresponding to the current coordinates.
 {
     current.coords <- coords[current,]
     all.markers <- names(current.coords)
     all.cols <- viridis(256)
+
+    if (interval > 0) { 
+        cur.assign <- unpackIndices(cell.assign[current])
+        cur.cell.int <- cell.int[,cur.assign[[1]],drop=FALSE]
+        half.left <- (1-interval)/2
+        prob.interval <- c(half.left, interval + half.left)
+    }
 
     for (m in ordering) {
         curdex <- round(approx(collim[,m], c(1, 256), xout=current.coords[m], rule=2)$y)
@@ -248,7 +278,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
         }
     
         curdens <- density.data[[m]]
-        plot(0, 0, type="n", xlab="", ylab="", yaxt="n", bty="n", main=all.markers[m], xlim=xlim, ylim=c(0, max(curdens$y)))
+        plot(0, 0, type="n", xlab="", ylab="", yaxt="n", bty="n", main=all.markers[m], xlim=xlim, ylim=c(0, max(curdens$y)), ...)
         my.x <- c(curdens$x[1]-10, curdens$x, curdens$x[length(curdens$x)]+10)
         my.y <- c(0, curdens$y, 0)
         polygon(my.x, my.y, col=all.cols[curdex], border=NA)
@@ -259,6 +289,11 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
         cury <- approx(my.x, my.y, curpos, rule=2)$y
         par(xpd=TRUE)
         points(curpos, cury, pch=16, col="red", cex=1.5)
+        
+        if (interval > 0) {
+            q.int <- quantile(cur.cell.int[m,], prob.interval)
+            segments(q.int[1], cury, q.int[2], col="red")
+        }
 
         if (length(extras)) { 
             text(curpos, cury, pos=3, current, col="red")

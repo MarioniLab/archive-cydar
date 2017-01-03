@@ -6,7 +6,8 @@
 
 \usage{
 interpretSpheres(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6,
-    plot.height=100, xlim=NULL, p=0.01, run=TRUE, ...)
+    plot.height=100, xlim=NULL, p=0.01, add.plot=NULL, add.plot.height=500, 
+    run=TRUE, ...)
 }
 
 \arguments{
@@ -21,6 +22,8 @@ This should be of length equal to the number of rows in \code{x}.}
 \item{xlim}{A numeric vector of length two specifying the x-axis limits for all plots.
 Otherwise, \code{\link{intensityRanges}} is used to define limits for each marker.}
 \item{p}{A numeric scalar to be passed to \code{\link{intensityRanges}}.}
+\item{add.plot}{A function taking two arguments (see below) to create additional plots in the app.}
+\item{add.plot.height}{An integer scalar specifying the height of the additional plots.}
 \item{run}{A logical scalar specifying whether the Shiny app should be run.}
 \item{...}{Additional arguments to be passed to \code{\link{density}}.}
 }
@@ -28,11 +31,16 @@ Otherwise, \code{\link{intensityRanges}} is used to define limits for each marke
 \details{
 This function creates a Shiny app in which density plots are constructed for intensities across all cells, one for each marker.
 For a given hypersphere, the median intensity is plotted as a red circle on top of the density plot for each marker.
-The area under the curve is highlighted using the \code{\link{viridis}} colour scheme, based on whether the median is relatively high or low compared to all of the cells.
+This allows users to quickly determine the biological meaning of each hypersphere, based on its median marker expression (and other statistics in \code{metrics}).
 
-The idea is to allow users to inspect each hypersphere to quickly determine its biological meaning, based on the expression of particular markers and other statistics in \code{metrics}.
-For each hypersphere, the closest hyperspheres that have already been labelled are also shown, along with the Euclidean distances to their locations.
-This helps with the labelling process by identifying labels in the neighbouring space.
+For each marker, the area under the curve is highlighted using the \code{\link{viridis}} colour scheme.
+This is based on whether the median is relatively high (yellow) or low (purple) compared to all of the cells.
+An interval around the median is also displayed, representing the range of intensities across a given percentage (default 95\%) of cells in the hypersphere.
+This provides more information about the spread of intensities within each hypersphere.
+
+Each hypersphere can be labelled with some meaningful term, e.g., the cell type that corresponds to the suite of expressed markers.
+For each hypersphere, the closest hyperspheres that have already been labelled are shown, along with the Euclidean distances to their locations.
+This is designed to assist with the labelling process by identifying pre-labelled hyperspheres in the neighbouring space.
 
 Users can navigate across hyperspheres (i.e., up or down the rows of \code{x}) using the \dQuote{Previous} or \dQuote{Next} buttons.
 Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to} field.
@@ -40,7 +48,20 @@ The navigation history at any given time is shown in the side bar.
 
 Finally, the labels can be saved to R using the \dQuote{Save to R} button.
 This stops the app and returns a character vector of labels in the R session.
-Existing labels can also be re-used by supplying them to \code{labels}, to allow users to label parts at a time.
+Existing labels can also be re-used by supplying them to \code{labels}, to allow users to label parts of the data set at a time.
+}
+
+\section{Putting in additional plots}{
+Users can define \code{add.plot} as a function taking two arguments:
+\enumerate{
+\item An integer scalar, specifying the row index of the second argument.
+This corresponds to the hypersphere currently being inspected.
+\item A cyData object, which is set internally to the value of \code{x} used in \code{interpretSpheres}.
+This should contain information about all hyperspheres.
+}
+\code{add.plot} should generate a plot on the current graphics device.
+This is usually done in a hypersphere-specific manner, where the first argument is used to extract the relevant information from the second argument.
+For example, the abundances of all samples can be visualized directly for each hypersphere in the app.
 }
 
 \value{
@@ -81,5 +102,11 @@ labels <- interpretSpheres(cnt)
 N <- nrow(cnt)
 metrics <- data.frame(logFC=rnorm(N), PValue=runif(N))
 app <- interpretSpheres(cnt, metrics=metrics, run=FALSE)
+
+# Doing it with an extra plot.
+app <- interpretSpheres(cnt, run=FALSE, add.plot=function(i, x) {
+    barplot(assay(x)[i,]/x$totals*100, ylab="Percentage of cells")
+})
+
 }
 

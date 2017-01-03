@@ -8,10 +8,10 @@ importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sample
 importFrom("flowCore", rectangleGate, polygonGate, flowFrame)
 importFrom("Biobase", AnnotatedDataFrame)
 
-importFrom("graphics", plot, points, lines, par, polygon, text)
+importFrom("graphics", plot, points, lines, par, polygon, text, segments)
 importFrom("shiny", 
         column, fluidPage, fluidRow, pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
-        observeEvent, actionButton, textInput,
+        observeEvent, actionButton, textInput, sliderInput,
         plotOutput, renderPlot, renderTable, tableOutput,
         shinyApp, stopApp, runApp)
 
