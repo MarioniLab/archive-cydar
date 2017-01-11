@@ -8,6 +8,10 @@ outlierGate <- function(x, name, nmads=3, type=c("both", "upper", "lower"))
     intensity <- exprs(x)[,name]
     center <- median(intensity)
     dev <- mad(intensity, center=center)
+    if (dev==0) {
+        warning("adding small offset to MAD of zero")
+        dev <- 1e-6
+    }
     type <- match.arg(type)
     
     upper.threshold <- Inf
@@ -25,22 +29,22 @@ outlierGate <- function(x, name, nmads=3, type=c("both", "upper", "lower"))
 }
 
 dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
-                    shoulder=FALSE, ...)
+                    shoulder=FALSE, rank=1, ...)
 # Constructs a gate to remove non-cells, doublets, and
 # cells with differences in the two DNA channels.
 # This assumes that most events correspond to singlets.
 #
 # written by Aaron Lun
 # created 15 December 2016   
-# last modified 2 January 2017 
+# last modified 11 January 2017 
 {
     ex1 <- exprs(x)[,name1]
-    bound1 <- .get_LR_bounds(ex1, nmads=nmads, shoulder=shoulder, ...)
+    bound1 <- .get_LR_bounds(ex1, nmads=nmads, shoulder=shoulder, rank=rank, ...)
     lower.dna1 <- bound1$left
     upper.dna1 <- bound1$right
 
     ex2 <- exprs(x)[,name2]
-    bound2 <- .get_LR_bounds(ex2, nmads=nmads, shoulder=shoulder, ...)
+    bound2 <- .get_LR_bounds(ex2, nmads=nmads, shoulder=shoulder, rank=rank, ...)
     lower.dna2 <- bound2$left
     upper.dna2 <- bound2$right
    
@@ -72,17 +76,18 @@ dnaGate <- function(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"),
     polygonGate(filterId="dnaGate", .gate=all.vertices)
 }
 
-.get_LR_bounds <- function(x, nmads, shoulder, ...) {
+.get_LR_bounds <- function(x, nmads, shoulder, rank, ...) {
     dens <- density(x, ...)
-    max.x <- which.max(dens$y)
-    mode.x <- dens$x[max.x]
+    first.deriv <- diff(dens$y)
+    local.max <- which(c(TRUE, first.deriv > 0) & c(first.deriv < 0, TRUE))
+    max.x <- local.max[order(dens$y[local.max], decreasing=TRUE)[rank]]
 
+    mode.x <- dens$x[max.x]
     lower.pts <- x[x < mode.x] 
     dev <- median(mode.x - lower.pts) * 1.4826 # i.e., MAD using only the lower half of the distribution
     ref.lower <- mode.x - nmads*dev
     ref.upper <- mode.x + nmads*dev
 
-    first.deriv <- diff(dens$y)
     local.min <- which(c(TRUE, first.deriv <= 0) & c(first.deriv >= 0, TRUE))
     lower <- dens$x[max(local.min[local.min < max.x])]
     if (lower < ref.lower) lower <- ref.lower

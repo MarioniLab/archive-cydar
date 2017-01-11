@@ -8,7 +8,7 @@ Construct a gate to remove debris and doublets, based on the two DNA (iridium) c
 
 \usage{
 dnaGate(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"), 
-    shoulder=FALSE, ...)
+    shoulder=FALSE, rank=1, ...)
 }
 
 \arguments{
@@ -18,16 +18,18 @@ dnaGate(x, name1, name2, tol=0.5, nmads=3, type=c("both", "lower"),
 \item{nmads}{A numeric scalar specifying the number of median absolute deviations (MADs) beyond which an event can be considered an outlier.}
 \item{type}{A string specifying the type of gating to be performed.}
 \item{shoulder}{A logical scalar indicating whether the function should attempt to detect shoulders.}
+\item{rank}{An integer scalar specifying the peak corresponding to singlets. 
+By default, the largest mode is treated as the singlet peak.}
 \item{...}{Additional arguments to pass to \code{\link{density}}, to fine-tune identification of local minima.}
 }
 
 \details{
-For each DNA channel, the global mode is identified and is assumed to correspond to singlets.
-Local minima of density that neighbour the global mode are identified. 
-To remove debris, the lower bound is set to the largest local minima that is smaller than the global mode.
-To remove doublets, the upper bound is set to the smallest local minima that is larger than the mode.
+For each DNA channel, the \code{rank}th-largest local mode is identified and is assumed to correspond to singlets.
+Local minima of density that neighbour the chosen mode are identified. 
+To remove debris, the lower bound is set to the largest local minima that is smaller than the chosen mode.
+To remove doublets, the upper bound is set to the smallest local minima that is larger than the chosen mode.
 
-We also consider an alternative lower bound at \code{nmads} MADs below the global mode.
+We also consider an alternative lower bound at \code{nmads} MADs below the chosen mode.
 (Here, the MAD is computed using only values below the mode, to avoid potential inflation due to a doublet peak.)
 If this alternative is larger than the largest local minima below the mode, it is used as the lower bound instead.
 This avoids using a poor lower bound when there are no obvious minima in the distribution.
