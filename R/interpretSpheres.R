@@ -274,18 +274,20 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
     for (m in ordering) {
         curdex <- round(approx(collim[,m], c(1, 256), xout=current.coords[m], rule=2)$y)
         if (is.null(xlim)) { 
-            xlim <- collim[,m]
+            xlim2 <- collim[,m]
+        } else {
+            xlim2 <- xlim
         }
     
         curdens <- density.data[[m]]
-        plot(0, 0, type="n", xlab="", ylab="", yaxt="n", bty="n", main=all.markers[m], xlim=xlim, ylim=c(0, max(curdens$y)), ...)
+        plot(0, 0, type="n", xlab="", ylab="", yaxt="n", bty="n", main=all.markers[m], xlim=xlim2, ylim=c(0, max(curdens$y)), ...)
         my.x <- c(curdens$x[1]-10, curdens$x, curdens$x[length(curdens$x)]+10)
         my.y <- c(0, curdens$y, 0)
         polygon(my.x, my.y, col=all.cols[curdex], border=NA)
         lines(my.x, my.y)
     
         curpos <- current.coords[m]
-        curpos <- pmin(xlim[2], pmax(xlim[1], curpos))
+        curpos <- pmin(xlim2[2], pmax(xlim2[1], curpos))
         cury <- approx(my.x, my.y, curpos, rule=2)$y
         par(xpd=TRUE)
         points(curpos, cury, pch=16, col="red", cex=1.5)
@@ -299,7 +301,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
             text(curpos, cury, pos=3, current, col="red")
             for (ex in extras) {
                 expos <- coords[ex,m]
-                expos <- pmin(xlim[2], pmax(xlim[1], expos))
+                expos <- pmin(xlim2[2], pmax(xlim2[1], expos))
                 exy <- approx(my.x, my.y, expos, rule=2)$y
                 points(expos, exy, pch=16, col="red", cex=1.5)
                 text(expos, exy, pos=3, ex, col="red")
