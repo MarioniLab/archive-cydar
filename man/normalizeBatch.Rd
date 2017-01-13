@@ -10,7 +10,10 @@ normalizeBatch(batch.x, batch.comp, mode=c("quantile", "range"), p=0.01)
 
 \arguments{
 \item{batch.x}{A list, where each element is of the same type as \code{x} used in \code{\link{prepareCellData}} (i.e., a ncdfFlowSet or a list of intensity matrices across all samples).}
-\item{batch.comp}{A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.}
+\item{batch.comp}{
+A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.
+This can be set to \code{NULL} if the composition is the same for all batches.
+}
 \item{mode}{A string specifying whether quantile or range-based normalization should be performed.}
 \item{p}{A numeric scalar between 0 and 0.5, specifying the percentile used to define the range of the distribution for range-based normalization.}
 }
