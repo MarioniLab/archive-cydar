@@ -5,14 +5,14 @@
 \description{Perform quantile normalization to correct intensities across batches with at least one common level.}
 
 \usage{
-normalizeBatch(batch.x, batch.comp, mode=c("quantile", "range"), p=0.01)
+normalizeBatch(batch.x, batch.comp, mode=c("range", "quantile"), p=0.01)
 }
 
 \arguments{
 \item{batch.x}{A list, where each element is of the same type as \code{x} used in \code{\link{prepareCellData}} (i.e., a ncdfFlowSet or a list of intensity matrices across all samples).}
 \item{batch.comp}{
 A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.
-This can be set to \code{NULL} if the composition is the same for all batches.
+Also can be \code{NULL}, see below.
 }
 \item{mode}{A string specifying whether quantile or range-based normalization should be performed.}
 \item{p}{A numeric scalar between 0 and 0.5, specifying the percentile used to define the range of the distribution for range-based normalization.}
@@ -20,31 +20,47 @@ This can be set to \code{NULL} if the composition is the same for all batches.
 
 \details{ 
 Consider an experiment containing several batches of barcoded samples, in which the barcoding was performed within but not between batches.
-This function performs quantile normalization on the intensities for each marker such that they are comparable between samples in different batches.
-It relies on the presence of samples from the same group across the different batches to construct the adjustment function for each batch.
-This function is then applied to all other samples in each batch, and the entire process is repeated with the next marker.
-
-The process for each marker is as follows. 
-Firstly, a quantile function is constructed for each batch, from the weighted pool of intensities from all samples of that batch (see below for details about weighting).
+This function normalizes the intensities for each marker such that they are comparable between samples in different batches.
+The process for each marker is as follows: 
+\enumerate{
+\item Weighting is performed to downweight the contribution of larger samples within each batch, as well as to match the composition of samples across different batches.
+The composition of each batch can be specified by \code{batch.comp}, see below for more details.
+\item A quantile function is constructed for each batch, from the weighted pool of intensities from all samples of that batch.
 These functions are averaged across batches to obtain a reference quantile function, representing a reference distribution.
-For each batch, an adjustment function is constructed that converts the batch-specific quantile function to that of the reference quantile function.
-This adjustment is applied to the intensities of all samples in that batch, yielding corrected intensities for direct comparisons between samples.
-
-Weighting is performed to downweight the contribution of larger samples within each batch, as well as to match the composition of different batches.
-For example, a batch with more samples in group A and fewer samples in group B would downweight the former and upweight the latter.
-Groupings can be specified as batch-specific factors in \code{batch.comp}, with at least one common group required across all batches.
-Ideally, all batches would contain samples from all groups, with similar total numbers of cells across batches for each group.
-For non-shared groups, note that the adjustment function may not be accurate if the to-be-corrected intensities lie outside the range of values used to construct the function.
-
-If \code{mode="range"}, range-based normalization is performed instead instead of quantile normalization.
-For each marker, the range of the reference distribution is computed, using percentiles at \code{p} to avoid distortions due to outliers.
+\item If \code{mode="range"}, the range of the reference distribution is computed, using percentiles at \code{p} to avoid distortions due to outliers.
 A batch-specific scaling function is defined to equalize the range of the weighted distribution of intensities from each batch to the reference range.
-This function is then applied to all samples, yielding normalized intensities.
-Compared to \code{mode="quantile"}, range-based normalization avoids assuming that all differences between batches are technical, but cannot handle non-linear technical effects.
+\item Alternatively, if \code{mode="quantile"}, an adjustment function is constructed that converts the batch-specific quantile function to that of the reference quantile function.
+See below for more details on the choice between quantile and range-based normalization.
+\item The scaling or adjustment function is applied to the intensities of all samples in that batch, yielding corrected intensities for direct comparisons between samples.
+}
+
+Groupings can be specified as batch-specific factors in \code{batch.comp}, with at least one common group required across all batches.
+If the composition of each batch is the same, \code{batch.comp} can be set to \code{NULL} rather than being manually specified.
+This composition is used to weight the contribution of each sample to the reference distribution.
+For example, a batch with more samples in group A and fewer samples in group B would get lower weights assigned to the former and larger weights to the latter.
+
+Construction of the adjustment function relies on the presence of samples from the same group across the different batches.
+Ideally, all batches would contain samples from all groups, with similar total numbers of cells across batches for each group.
+The adjustment function will still be applied to intensities for samples from non-shared groups that do not contribute to the reference distribution.
+However, note that the adjustment may not be accurate if the to-be-corrected intensities lie outside the range of values used to construct the function.
 
 To convert the output into a format appropriate for \code{\link{prepareCellData}}, apply \code{\link{unlist}} with \code{recursive=FALSE}.
 This will generate a list of intensity matrices for all samples in all batches, rather than a list of list of matrices.
 Note that a batch effect should still be included in the design matrix when modelling abundances, as only the intensities are corrected here.
+}
+
+\section{Choosing between range and quantile methods}{
+Quantile normalization is more powerful than range-based normalization, as the former can eliminate non-linear changes to the intensities whereas the latter cannot.
+However, quantile normalization assumes that all differences in the reference distributions between batches are due to differences in staining or detection efficiency.
+This is not the case in most experimental designs where the abundance of cells also differs across batches.
+For example, batches are confounded with uninteresting biological factors (e.g., individual, mouse of origin) that affect cell abundance. 
+The low number of samples in each batch also leads to stochastic differences in abundance, even if the expected reference distribution is the same.
+
+Quantile normalization attempts to resolve the differences in abundance by changing the intensities in the affected populations.
+This can result in some rather drastic adjustments to the intensities, e.g., where cells in one intensity peak are shifted to an entirely new peak.
+For routine use, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
+This reduces the risk of distorting the intensities, albeit at the cost of \dQuote{under-normalizing} the data.
+See also \code{\link{batchDiff}} for an empirical method to decide if range-based normalization is sufficient.
 }
 
 \value{
@@ -55,7 +71,8 @@ This matches the format of \code{batch.x}.
 \author{Aaron Lun}
 
 \seealso{
-\code{\link{prepareCellData}}
+\code{\link{prepareCellData}},
+\code{\link{batchDiff}}
 }
 
 \examples{

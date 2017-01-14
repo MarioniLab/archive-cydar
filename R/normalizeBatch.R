@@ -1,4 +1,4 @@
-normalizeBatch <- function(batch.x, batch.comp, mode=c("quantile", "range"), p=0.01)
+normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "quantile"), p=0.01)
 # Performs quantile or range adjustment of different batches, given a 
 # list of 'x' objects like that used for 'prepareCellData'
 # and another list specifying the composition of samples per batch.
