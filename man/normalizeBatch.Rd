@@ -58,9 +58,11 @@ The low number of samples in each batch also leads to stochastic differences in 
 
 Quantile normalization attempts to resolve the differences in abundance by changing the intensities in the affected populations.
 This can result in some rather drastic adjustments to the intensities, e.g., where cells in one intensity peak are shifted to an entirely new peak.
-For routine use, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
+Such large adjustments are undesirable as they will affect the interpretation of any changes in abundance detected in downstream analyses.
+Thus, for routine use, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
 This reduces the risk of distorting the intensities, albeit at the cost of \dQuote{under-normalizing} the data.
-See also \code{\link{batchDiff}} for an empirical method to decide if range-based normalization is sufficient.
+
+See also \code{\link{diffIntDist}} for a method to assess the effects of batch normalization.
 }
 
 \value{
@@ -72,7 +74,7 @@ This matches the format of \code{batch.x}.
 
 \seealso{
 \code{\link{prepareCellData}},
-\code{\link{batchDiff}}
+\code{\link{diffIntDist}}
 }
 
 \examples{

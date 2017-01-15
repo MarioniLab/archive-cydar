@@ -33,9 +33,10 @@ Samples are ordered according to the specified order of batches in \code{...} an
 Each entry of the matrix contains the difference between the corresponding samples.
 
 If multiple objects are specified in \code{...}, they are assumed to represent different batches of samples.
-The differences between samples in the same/different batches are useful for examining the effect of inter-batch normalization, as shown in the example below.
+The differences between samples in the same or different batches are useful for evaluating the effects of inter-batch normalization, as shown in the example below.
 If normalization was successful, differences between batches should be similar to the differences within batches. 
-See \code{\link{normalizeBatch}} for more details.
+However, this diagnostic is only applicable if the batches are not confounded by biological factors - 
+otherwise, if such factors were present, inter-batch differences \emph{should} be larger.
 }
 
 \value{
