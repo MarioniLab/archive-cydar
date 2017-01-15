@@ -77,11 +77,11 @@ This matches the format of \code{batch.x}.
 
 \examples{
 ### Mocking up some data: ###
-nmarkers <- 40
+nmarkers <- 20
 marker.names <- paste0("X", seq_len(nmarkers))
 all.x <- list()
 
-for (b in 1:3) { # 3 batches
+for (b in paste0("Batch", 1:3)) { # 3 batches
     nsamples <- 10
     sample.names <- paste0("Y", seq_len(nsamples))
     trans.shift <- rnorm(nmarkers, 0, 1)
