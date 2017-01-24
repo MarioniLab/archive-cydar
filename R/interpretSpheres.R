@@ -1,46 +1,71 @@
-interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6, plot.height=100, xlim=NULL, 
-                             p=0.01, add.plot=NULL, add.plot.height=500, run=TRUE, ...)   
+interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL, 
+                             metrics=NULL, num.per.row=6, plot.height=100, xlim=NULL, p=0.01, 
+                             red.coords=NULL, red.highlight=NULL, red.plot.height=500, 
+                             add.plot=NULL, add.plot.height=500, run=TRUE, ...)   
 # This creates a Shiny app to assist interpretation of the hyperspheres.
 #
 # written by Aaron Lun
 # created 1 November 2016    
-# last modified 3 December 2017
+# last modified 24 December 2017
 {
-    coords <- intensities(x)
-    nrows <- ceiling(ncol(coords)/num.per.row)
+    intvals <- intensities(x)
+    nrows <- ceiling(ncol(intvals)/num.per.row)
     plot.height <- plot.height*nrows
     collim <- intensityRanges(x, p=p)
 
-    coords <- as.matrix(coords)
-    N <- nrow(coords)
+    intvals <- as.matrix(intvals)
+    N <- nrow(intvals)
     cell.int <- cellIntensities(x)
     cell.assign <- cellAssignments(x)
 
     # Checking marker order.
     if (!is.null(markers)) { 
-        m.order <- match(markers, colnames(coords))
+        m.order <- match(markers, colnames(intvals))
         stopifnot(!any(is.na(m.order)))
     } else {
-        m.order <- seq_len(ncol(coords))
+        m.order <- seq_len(ncol(intvals))
+    }
+
+    # Checking hypersphere order.
+    if (!is.null(select)) {
+       select <- .subsetToIndex(select, N, "select") 
+    } else {
+        select <- seq_len(N)
+    }
+    if (length(select)==0L){ 
+        stop("empty 'select' provided")
+    }
+
+    # Should we add a nav plot?
+    if (!is.null(red.coords)) { 
+        add.nav <- TRUE
+        stopifnot(identical(nrow(red.coords), N))
+        stopifnot(identical(ncol(red.coords), 2L))
+        if (!is.null(red.highlight)) {
+            red.highlight <- .subsetToIndex(red.highlight, N, "red.highlight")
+        }
+        red.coords <- data.frame(x=red.coords[,1], y=red.coords[,2])
+    } else {
+        add.nav <- FALSE
     }
 
     # Using existing labels if provided.
     if (is.null(labels)) {
         labels <- character(N)
     } else {
-        stopifnot(length(labels)==N)
+        stopifnot(identical(length(labels), N))
     } 
 
     # Checking metrics if provided.
     if (!is.null(metrics)) {
-        stopifnot(nrow(metrics)==N)
+        stopifnot(identical(nrow(metrics), N))
     }
 
     # Setting up the internal plotting and storage.
     collected <- new.env()
     collected$labels <- labels
 
-    collected$current <- 1
+    collected$current <- select[1]
     collected$interval <- 0
     collected$history <- rep(NA_integer_, 5)
     all.dens <- .prepareDensity(x, ...)
@@ -69,6 +94,9 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
                                       )
                              )
                         )
+    if (add.nav) { 
+        main.args <- append(main.args, list(hr(), plotOutput("navplot", height = red.plot.height, click = "nav_click")))
+    }    
     if (!is.null(add.plot)) {
         main.args <- append(main.args, list(hr(), plotOutput("addplots", height = add.plot.height)))
     }
@@ -99,10 +127,27 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
     updatePlot <- function(output, extras=NULL) {
         output$histograms <- renderPlot({
             par(mfrow=c(nrows, num.per.row), mar=c(2.1, 1.1, 2.1, 1.1))
-            .generateDensity(coords, all.dens, xlim=xlim, collim=collim, ordering=m.order,
+            .generateDensity(intvals, all.dens, xlim=xlim, collim=collim, ordering=m.order,
                              current=collected$current, extras=extras, 
                              interval=collected$interval, cell.int=cell.int, cell.assign=cell.assign)
         })
+        if (add.nav) {
+            output$navplot <- renderPlot({
+                par(mar=c(5.1, 4.1, 1.1, 10.1))
+                col <- rep("grey", N)
+                if (!is.null(red.highlight)) {
+                    col[red.highlight] <- "orange"
+                }
+                plot(red.coords$x, red.coords$y, xlab="Dimension 1", ylab="Dimension 2", col=col, pch=16, cex.lab=1.4)
+                has.label <- collected$labels!="" 
+                points(red.coords$x[has.label], red.coords$y[has.label], col="black", pch=16, cex=1.5)
+                points(red.coords$x[collected$current], red.coords$y[collected$current], col="red", pch=16, cex=2)
+                uout <- par()$usr
+                par(xpd=TRUE)
+                legend(uout[2] + (uout[2]-uout[1])*0.01, uout[4], col=c("grey", "orange", "black", "red"), 
+                       pch=16, legend=c("Not sig.", "Significant", "Labelled", "Current"))
+            })
+        }
         if (!is.null(add.plot)) {
             output$addplots <- renderPlot({ add.plot(collected$current, x) }) 
         }
@@ -147,7 +192,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
         output$closest <- renderTable({
             is.anno <- which(collected$labels!="")
             if (length(is.anno)) { 
-                all.dist <- sqrt(colSums((t(coords[is.anno,,drop=FALSE]) - coords[collected$current,])^2))
+                all.dist <- sqrt(colSums((t(intvals[is.anno,,drop=FALSE]) - intvals[collected$current,])^2))
             } else {
                 all.dist <- numeric(0)
             }
@@ -165,10 +210,11 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
         updateClosest(output)
 
         observeEvent(input$previous, {
-            if (collected$current!=1L) { 
-                collected$current <- collected$current - 1L
+            attempt <- select[tail(which(select < collected$current), 1)]
+            if (length(attempt)!=1L) { 
+                warning("no index in 'select' is lower than the current index")
             } else {
-                warning("index cannot be negative")
+                collected$current <- attempt
             }
             updatePlot(output)
             updateMetrics(output)
@@ -177,20 +223,16 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
         })
 
         observeEvent(input$continue, {
-            if (collected$current!=N) {
-                collected$current <- collected$current + 1L
+            attempt <- select[which(select > collected$current)[1]]
+            if (is.na(attempt)) { 
+                warning("no index in 'select' is larger than the current index")
             } else {
-                warning("index greater than number of hyperspheres")
+                collected$current <- attempt
             }
             updatePlot(output)
             updateMetrics(output)
             updateHistory(output)  
             updateClosest(output)  
-        })
-
-        observeEvent(input$intbar, {
-            collected$interval <- input$intbar/100
-            updatePlot(output)
         })
 
         observeEvent(input$go, {
@@ -204,6 +246,24 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
             updateMetrics(output)
             updateHistory(output)
             updateClosest(output)
+        })
+
+        observe({
+            if (add.nav) { 
+                all.near <- nearPoints(red.coords, input$nav_click, xvar = "x", yvar = "y", threshold=Inf, maxpoints=1)
+                if (nrow(all.near)) {
+                    collected$current <- as.integer(rownames(all.near)[1])
+                    updatePlot(output)
+                    updateMetrics(output)
+                    updateHistory(output)
+                    updateClosest(output)
+                }
+            }
+        })
+
+        observeEvent(input$intbar, {
+            collected$interval <- input$intbar/100
+            updatePlot(output)
         })
 
         observeEvent(input$addtoplot, {
@@ -238,6 +298,19 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, metrics=NULL, num.per
     } else {
         return(app)
     }
+}
+
+.subsetToIndex <- function(subset, N, argname) {
+    if (is.logical(subset)) { 
+        stopifnot(identical(length(subset), N))
+        subset <- which(subset)
+    } else if (is.numeric(subset)) { 
+        subset <- sort(as.integer(subset))
+        stopifnot(all(subset >= 1L & subset <= N))
+    } else {
+        stop(sprintf("unknown type for '%s'", argname))
+    }
+    return(subset)
 }
 
 .prepareDensity <- function(x, ...) 

@@ -5,9 +5,10 @@
 \description{Launches a Shiny app to assist interpretation of hyperspheres.}
 
 \usage{
-interpretSpheres(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6,
-    plot.height=100, xlim=NULL, p=0.01, add.plot=NULL, add.plot.height=500, 
-    run=TRUE, ...)
+interpretSpheres(x, markers=NULL, labels=NULL, select=NULL, metrics=NULL, 
+    num.per.row=6, plot.height=100, xlim=NULL, p=0.01, 
+    red.coords=NULL, red.highlight=NULL, red.plot.height=500, 
+    add.plot=NULL, add.plot.height=500, run=TRUE, ...)   
 }
 
 \arguments{
@@ -16,12 +17,18 @@ interpretSpheres(x, markers=NULL, labels=NULL, metrics=NULL, num.per.row=6,
 If \code{NULL}, all markers are used in the order corresponding to the columns of \code{intensities(x)}.}
 \item{labels}{A character vector containing existing labels for the hyperspheres.
 This should be of length equal to the number of rows in \code{x}.}
+\item{select}{A logical or integer vector indicating which rows of \code{x} should be inspected.
+Defaults to all rows.}
 \item{metrics}{A dataframe containing metrics to be reported for each hypersphere, with number of rows equal to \code{x}.}
 \item{num.per.row}{An integer scalar specifying the number of plots per row.}
 \item{plot.height}{An integer scalar specifying the height of each plot in pixels.}
 \item{xlim}{A numeric vector of length two specifying the x-axis limits for all plots.
 Otherwise, \code{\link{intensityRanges}} is used to define limits for each marker.}
 \item{p}{A numeric scalar to be passed to \code{\link{intensityRanges}}.}
+\item{red.coords}{A numeric matrix with two columns and number of rows equal to \code{nrow(x)}, containing a reduced-dimension representation of hypersphere coordinates.
+The first and second columns should contain the x- and y-coordinates, respectively.}
+\item{red.highlight}{A logical or integer vector specifying which rows of \code{x} should be highlighed on the reduced dimensionality plot.}
+\item{red.plot.height}{An integer scalar specifying the height of the reduced-dimension plot.}
 \item{add.plot}{A function taking two arguments (see below) to create additional plots in the app.}
 \item{add.plot.height}{An integer scalar specifying the height of the additional plots.}
 \item{run}{A logical scalar specifying whether the Shiny app should be run.}
@@ -42,13 +49,26 @@ Each hypersphere can be labelled with some meaningful term, e.g., the cell type 
 For each hypersphere, the closest hyperspheres that have already been labelled are shown, along with the Euclidean distances to their locations.
 This is designed to assist with the labelling process by identifying pre-labelled hyperspheres in the neighbouring space.
 
-Users can navigate across hyperspheres (i.e., up or down the rows of \code{x}) using the \dQuote{Previous} or \dQuote{Next} buttons.
-Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to} field.
-The navigation history at any given time is shown in the side bar.
-
 Finally, the labels can be saved to R using the \dQuote{Save to R} button.
 This stops the app and returns a character vector of labels in the R session.
 Existing labels can also be re-used by supplying them to \code{labels}, to allow users to label parts of the data set at a time.
+}
+
+\section{Navigation}{
+Users can navigate through the data set using the \dQuote{Previous} or \dQuote{Next} buttons.
+This moves across hyperspheres specified by \code{select}, i.e., pressing \dQuote{Next} will jump to the next hypersphere in \code{select}.
+By default, \code{select=NULL} which means that the app will progress through all hyperspheres in \code{x}.
+It is often worth setting \code{select}, e.g., to non-redundant significant hyperspheres in order to reduce the number of elements that need to be inspected.
+
+Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to} field.
+This specifies the row index for the hypersphere of interest, and works for either selected or unselected hyperspheres.
+However, pressing \dQuote{Previous} or \dQuote{Next} will jump to the nearest index of the selected hyperspheres. 
+The navigation history at any given time is shown in the side bar.
+
+A reduced-dimensionality plot is also constructed using specified coordinates in two-dimensional space for each hypersphere.
+The current hypersphere is marked on this plot with a red dot.
+Previously visited and labelled hyperspheres are marked in black.
+Users can also highlight particular hyperspheres in orange with \code{red.highlight}, e.g., if they are significantly differential or not.
 }
 
 \section{Putting in additional plots}{
@@ -85,7 +105,7 @@ This returns a character vector upon stopping, as previously described.
 
 \examples{
 # Mocking up some data.
-example(prepareCellData)
+example(prepareCellData, echo=FALSE)
 cnt <- countCells(cd, filter=1)
 
 # Constructing the app
