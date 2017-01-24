@@ -39,9 +39,9 @@ A numeric scalar specifying a modified \code{tol} to use in \code{\link{countCel
 
 \examples{
 ### Mocking up some data: ###
-nmarkers <- 40
+nmarkers <- 20
 marker.names <- paste0("X", seq_len(nmarkers))
-nsamples <- 10
+nsamples <- 8
 sample.names <- paste0("Y", seq_len(nsamples))
 
 x <- list()

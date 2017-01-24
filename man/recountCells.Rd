@@ -66,9 +66,9 @@ Aaron Lun
 
 \examples{
 ### Mocking up some data: ###
-nmarkers <- 40
+nmarkers <- 20
 marker.names <- paste0("X", seq_len(nmarkers))
-nsamples <- 10
+nsamples <- 8
 sample.names <- paste0("Y", seq_len(nsamples))
 
 x <- list()
@@ -79,11 +79,11 @@ for (i in sample.names) {
 }
 
 ### Processing it beforehand with one set of markers: ###
-cd <- prepareCellData(x, markers=marker.names[1:20])
+cd <- prepareCellData(x, markers=marker.names[1:10])
 cnt <- countCells(cd, filter=5)
 
 ### Processing it afterwards with another set of markers: ###
-rcnt <- recountCells(cnt, markers=marker.names[21:22])
+rcnt <- recountCells(cnt, markers=marker.names[11:12])
 rcnt
 }
 
