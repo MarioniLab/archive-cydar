@@ -8,7 +8,7 @@ Depends: BiocParallel, SummarizedExperiment
 Imports: plotrix, viridis, methods, shiny, graphics, 
     grDevices, S4Vectors, flowCore, Biobase
 Suggests: ncdfFlow, testthat, BiocGenerics, knitr, 
-    edgeR, limma, glmnet, BiocStyle
+    edgeR, limma, glmnet, BiocStyle, flowStats
 biocViews: FlowCytometry, MultipleComparison, Proteomics 
 Description: Identifies differentially abundant populations 
     between samples and groups in mass cytometry data.

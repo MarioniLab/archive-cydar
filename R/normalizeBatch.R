@@ -1,12 +1,11 @@
-normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "curve"),
-    p=0.01, ref=1, npts=512, extra.init=NULL)
-# Performs curve- or range-based adjustment of different batches, given a 
+normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
+# Performs warp- or range-based adjustment of different batches, given a 
 # list of 'x' objects like that used for 'prepareCellData'
 # and another list specifying the composition of samples per batch.
 #
 # written by Aaron Lun
 # created 27 October 2016
-# last modified 27 January 2017
+# last modified 30 January 2017
 {
     if (is.null(batch.comp)) {
         batch.comp <- lapply(batch.x, function(i) rep(1, length(i)))
@@ -77,7 +76,6 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "curve"),
 
     mode <- match.arg(mode)
     for (m in ref.markers) {
-        print(m)
         # Putting together observations.
         all.obs <- list()
         for (b in seq_len(nbatches)) { 
@@ -89,9 +87,9 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "curve"),
             all.obs[[b]] <- unlist(cur.obs)
         }
 
-        if (mode=="curve") { 
-            # Performing curve-based normalization to a reference.
-            converters <- .transformDistr(all.obs, batch.weights, ref=ref, npts=npts, extra.init=extra.init)
+        if (mode=="warp") { 
+            # Performing warp-based normalization to a reference.
+            converters <- .transformDistr(all.obs, batch.weights)
             for (b in seq_len(nbatches)) { 
                 converter <- converters[[b]]
                 cur.out <- batch.out[[b]]
@@ -117,12 +115,10 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "curve"),
                 batch.min[b] <- out[1]
                 batch.max[b] <- out[2]
             }
-            all.min <- mean(batch.min)
-            all.max <- mean(batch.max)
+            targets <- c(mean(batch.min), mean(batch.max))
 
             # Scaling intensities per batch so that the observed range equals the average range.
             for (b in seq_len(nbatches)) {
-                targets <- c(all.min, all.max)
                 current <- c(batch.min[b], batch.max[b])
                 fit <- lm(targets ~ current)
                 cur.out <- batch.out[[b]]
@@ -137,119 +133,32 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "curve"),
     return(output)
 }
 
-.createCompareDistrFun <- function(ref.obs, cur.obs, ref.wts, cur.wts, npts=512) {
-    x <- list(ref.obs, cur.obs)
-    w <- list(ref.wts, cur.wts)
-    npts <- as.integer(npts)
-
-    # Handling zeroes separately.
-    sum.zero <- sum.nzero <- numeric(length(x))
-    for (b in seq_along(x)) { 
-        cur.o <- x[[b]]
-        cur.w <- w[[b]]
-        is.zero <- cur.o < 1e-16
-        sum.zero[b] <- sum(cur.w[is.zero])
-        x[[b]] <- cur.o[!is.zero]
-        cur.w <- cur.w[!is.zero]
-        w[[b]] <- cur.w/sum(cur.w)
-        sum.nzero[b] <- sum(w[[b]])
-    }
-    total.wts <- sum.zero + sum.nzero
-    prop.zero <- sum.zero/total.wts
-    prop.nzero <- sum.nzero/total.wts
-
-    # Computing difference in PDFs (function optimized for speed w.r.t. with zeros).
-    ref.obs <- x[[1]]
-    ref.max <- max(ref.obs)
-    ref.wts <- w[[1]]
-    cur.obs <- x[[2]]
-    cur.wts <- w[[2]]
-
-    FUN <- function(new.obs) {
-        maxpt <- max(ref.max, max(new.obs)) + 1
-        pt.size <- maxpt/(npts-1)
-        
-        is.zero <- new.obs < 1e-16
-        mod <- 0
-        if (any(is.zero)) {
-            mod <- sum(is.zero)/total.wts[2]
-            new.obs <- new.obs[!is.zero]
-            cur.wts <- cur.wts[!is.zero]
-            cur.wts <- cur.wts/sum(cur.wts)
-        }
-
-        rout <- safe_density(x=ref.obs, weights=ref.wts, from=0, to=maxpt, n=npts)
-        nout <- safe_density(x=new.obs, weights=cur.wts, from=0, to=maxpt, n=npts)
-        sum(abs(rout$y * prop.nzero[1] - nout$y * (prop.nzero[2] - mod))) * pt.size + abs(prop.zero[1] - (prop.zero[2] + mod))
-    }
-
-    # Force intensities to be non-negative:
-    return(list(FUN=FUN, rest.obs=pmax(cur.obs, 0))) 
-}
-
-safe_density <- function(x, ..., n) {
-    # Protect against errors in edge cases.
-    if (length(x)>=2L) {
-        return(density(x=x, ...))
-    } else if (length(x)==1L) {
-        return(density(x=x, bw=0.1, ...))
-    } else {
-        return(list(y=numeric(n)))
-    }
-}
-
-.transformDistr <- function(all.obs, all.wts, ref=1, npts=npts, extra.init=extra.init) {
-    # Adjustment function is: y = A/(1+exp(B-exp(C)*x)) - A/(1+exp(B))
-    # B and C are in the exponents so that exp(B) and exp(C) are always positive.
-    transFUN <- function(par, x) {
-        adj <- par[["A"]]/(1 + exp(par[["B"]]-exp(par[["C"]])*x)) - par[["A"]]/(1 + exp(par[["B"]]))
-        pmax(0, x + adj)
-    }
-
-    # Figuring if the reference.
-    ref <- as.integer(ref)
-    if (ref <= 0L || ref >= length(all.obs)) {
-        stop("'ref' must be one of the batches")
-    }
-    ref.obs <- all.obs[[ref]]
-    ref.wts <- all.wts[[ref]]
-    
-    # Normalizing everything to the reference batch.
-    converter <- list()
+.transformDistr <- function(all.obs, all.wts) {
+    # Subsample intensities proportional to weights.
+    cur.ffs <- list()
     for (b in seq_along(all.obs)) {
-        if (b==ref) { 
-            converter[[b]] <- function(x) x
-            next 
-        }
         cur.obs <- all.obs[[b]]
         cur.wts <- all.wts[[b]]
+        chosen <- sample(cur.obs, length(cur.obs), prob=cur.wts, replace=TRUE)
+        chosen <- c(chosen, range(cur.obs)) # Adding also the first and last entries.
+        cur.ffs[[b]] <- flowFrame(cbind(M=chosen))
+    }        
 
-        # Generating the function to optimize.
-        comp.out <- .createCompareDistrFun(ref.obs, cur.obs, ref.wts, cur.wts, npts=npts)
-        compFUN <- comp.out$FUN
-        rest.obs <- comp.out$rest.obs
-                          
-        # Running optim from many starting points (different shapes), to explore the lumpy space.
-        last.val <- Inf
-        opt.out <- NULL
-        for (init in list(c(A=0,B=1,C=1), 
-                          c(A=0,B=10,C=1),
-                          c(A=0,B=1,C=-10),
-                          extra.init)) { 
-            cur.out <- optim(init, fn=function(par) {
-                new.obs <- transFUN(par, rest.obs)
-                compFUN(new.obs)
-            })
-            if (cur.out$value < last.val) {
-                last.val <- cur.out$value
-                opt.out <- cur.out
-            }
-        }
+    # Applying warping normalization, as described in the flowStats vignette.
+    require(flowStats)
+    names(cur.ffs) <- names(all.obs)
+    fs <- as(cur.ffs, "flowSet")
+    norm <- normalization(normFun=function(x, parameters, ...) { flowStats::warpSet(x, parameters, ...) },
+                          parameters="M", arguments=list(monwrd=TRUE))
+    new.fs <- normalize(fs, norm)
 
-        # Slight contortion to avoid lexical scoping.
-        print(opt.out$par)
-        converter[[b]] <- (function(par) { par; function(x) transFUN(par, x) })(opt.out$par)
+    # Defining warp functions (setting warpFuns doesn't really work, for some reason).
+    converter <- list()
+    for (b in seq_along(all.obs)) {
+        old.i <- exprs(fs[[b]])[,1]
+        new.i <- exprs(new.fs[[b]])[,1]
+        converter[[b]] <- splinefun(old.i, new.i)
     }
-    
     return(converter)
 }
+
