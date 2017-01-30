@@ -89,7 +89,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
 
         if (mode=="warp") { 
             # Performing warp-based normalization to a reference.
-            converters <- .transformDistr(all.obs, batch.weights)
+            converters <- .transformDistr(all.obs, batch.weights, m)
             for (b in seq_len(nbatches)) { 
                 converter <- converters[[b]]
                 cur.out <- batch.out[[b]]
@@ -133,7 +133,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
     return(output)
 }
 
-.transformDistr <- function(all.obs, all.wts) {
+.transformDistr <- function(all.obs, all.wts, name) {
     # Subsample intensities proportional to weights.
     cur.ffs <- list()
     for (b in seq_along(all.obs)) {
@@ -144,12 +144,14 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
         cur.ffs[[b]] <- flowFrame(cbind(M=chosen))
     }        
 
-    # Applying warping normalization, as described in the flowStats vignette.
-    require(flowStats)
     names(cur.ffs) <- names(all.obs)
     fs <- as(cur.ffs, "flowSet")
-    norm <- normalization(normFun=function(x, parameters, ...) { flowStats::warpSet(x, parameters, ...) },
-                          parameters="M", arguments=list(monwrd=TRUE))
+    colnames(fs) <- name
+
+    # Applying warping normalization, as described in the flowStats vignette.
+    require(flowStats)
+    norm <- normalization(normFunction=function(x, parameters, ...) { flowStats::warpSet(x, parameters, ...) },
+                          parameters=name, arguments=list(monwrd=TRUE))
     new.fs <- normalize(fs, norm)
 
     # Defining warp functions (setting warpFuns doesn't really work, for some reason).
