@@ -1,11 +1,12 @@
 \name{normalizeBatch}
 \alias{normalizeBatch}
 
-\title{Quantile normalize intensities across batches}
-\description{Perform quantile normalization to correct intensities across batches with at least one common level.}
+\title{Normalize intensities across batches}
+\description{Perform normalization to correct intensities across batches with at least one common level.}
 
 \usage{
-normalizeBatch(batch.x, batch.comp, mode=c("range", "quantile"), p=0.01)
+normalizeBatch(batch.x, batch.comp, mode=c("range", "curve"), 
+    p=0.01, ref=1, npts=512, extra.init=NULL)
 }
 
 \arguments{
@@ -14,8 +15,11 @@ normalizeBatch(batch.x, batch.comp, mode=c("range", "quantile"), p=0.01)
 A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.
 Also can be \code{NULL}, see below.
 }
-\item{mode}{A string specifying whether quantile or range-based normalization should be performed.}
+\item{mode}{A string specifying whether range- or curve-based normalization should be performed.}
 \item{p}{A numeric scalar between 0 and 0.5, specifying the percentile used to define the range of the distribution for range-based normalization.}
+\item{ref}{An integer scalar specifying which batch is to be used as the reference for curve-based normalization.}
+\item{npts}{An integer scalar specifying the number of points for the area calculation in curve-based normalization, passed to \code{\link{density}}.}
+\item{extra.init}{A list of named numeric vectors for use in \code{\link{optim}} during curve-based normalization, see below for details.}
 }
 
 \details{ 
@@ -25,12 +29,15 @@ The process for each marker is as follows:
 \enumerate{
 \item Weighting is performed to downweight the contribution of larger samples within each batch, as well as to match the composition of samples across different batches.
 The composition of each batch can be specified by \code{batch.comp}, see below for more details.
-\item A quantile function is constructed for each batch, from the weighted pool of intensities from all samples of that batch.
+The weighted intensities for each batch represents the pooled distribution of intensities from all samples in that batch.
+\item If \code{mode="range"}, a quantile function is constructed for the pooled distribution of each batch.
 These functions are averaged across batches to obtain a reference quantile function, representing a reference distribution.
-\item If \code{mode="range"}, the range of the reference distribution is computed, using percentiles at \code{p} to avoid distortions due to outliers.
+The range of the reference distribution is computed at percentiles \code{p} and \code{1-p} (to avoid distortions due to outliers).
 A batch-specific scaling function is defined to equalize the range of the weighted distribution of intensities from each batch to the reference range.
-\item Alternatively, if \code{mode="quantile"}, an adjustment function is constructed that converts the batch-specific quantile function to that of the reference quantile function.
-See below for more details on the choice between quantile and range-based normalization.
+\item If \code{mode="curve"}, an adjustment function is constructed that minimizes the area between probability density functions (PDFs) of the pooled intensity distributions.
+The \code{ref} batch is considered to be the reference, and the pooled distributions of each other batches are adjusted towards it using \code{\link{optim}}.
+The value of \code{npts} determines the resolution of the area calculation while \code{extra.init} specifies additional starting points to test during optimization.
+See below for more details on how curve-based normalization works.
 \item The scaling or adjustment function is applied to the intensities of all samples in that batch, yielding corrected intensities for direct comparisons between samples.
 }
 
@@ -49,17 +56,38 @@ This will generate a list of intensity matrices for all samples in all batches, 
 Note that a batch effect should still be included in the design matrix when modelling abundances, as only the intensities are corrected here.
 }
 
-\section{Choosing between range and quantile methods}{
-Quantile normalization is more powerful than range-based normalization, as the former can eliminate non-linear changes to the intensities whereas the latter cannot.
-However, quantile normalization assumes that all differences in the reference distributions between batches are due to differences in staining or detection efficiency.
-This is not the case in most experimental designs where the abundance of cells also differs across batches.
-For example, batches are confounded with uninteresting biological factors (e.g., individual, mouse of origin) that affect cell abundance. 
-The low number of samples in each batch also leads to stochastic differences in abundance, even if the expected reference distribution is the same.
+\section{Details on curve-based normalization}{ 
+This approach assumes that the batch effect involves a monotonic transformation of intensities.
+In particular, a modified version of the logistic function is considered:
 
-Quantile normalization attempts to resolve the differences in abundance by changing the intensities in the affected populations.
-This can result in some rather drastic adjustments to the intensities, e.g., where cells in one intensity peak are shifted to an entirely new peak.
-Such large adjustments are undesirable as they will affect the interpretation of any changes in abundance detected in downstream analyses.
-Thus, for routine use, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
+\deqn{
+\frac{A}{1 +\exp[B-x\exp(C)]} - \frac{A}{1 + \exp(B)}
+}
+
+where \eqn{x} is the intensity, \eqn{y} is the adjustment to the intensity, and the other terms are various constants to be estimated. 
+The normalized intensity is simply \code{x+y}.
+This function was chosen as it passes through the origin, so that zero intensities are unaffected by normalization;
+it can perform a sharp transition from no adjustment to a large adjustment, if only high intensities are distorted between batches;
+and it can mimic a straight line, to rescale peak widths between batches.
+
+The terms \eqn{A}, \eqn{B} and \eqn{C} are chosen to minimize the area between the PDFs of the pooled distributons of different batches.
+This area is calculated based on density estimates from \code{\link{density}}, with resolution determined by \code{npts}.
+Zero intensities are handled separately as they do not form a continuum.
+The aim is to adjust the distributions so that they become as similar as possible to the distribution of the reference batch, as specified in \code{ref}.
+
+Minimization is performed using \code{\link{optim}} from a variety of initiation points.
+Advanced users can specify additional starting points in \code{extra.init} if the algorithm becomes trapped in some local minima.
+This should be a list of named numeric vectors, where each vector contains \code{A}, which controls the direction and magnitude of the correction;
+\code{B}, which controls the location of the transition point; and \code{C}, which controls the gradient of the transition.
+}
+
+\section{Choosing between normalization methods}{
+Curve-based normalization is more powerful than range-based normalization, as the former can eliminate non-linear changes to the intensities whereas the latter cannot.
+However, it expects that the shape of the pooled distribution is roughly similar across batches.
+Large differences (e.g., a peak present in one batch and absent in another) may lead to incorrect adjustments.
+
+Such differences may be present when batches are confounded with uninteresting biological factors (e.g., individual, mouse of origin) that affect cell abundance. 
+In such cases, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
 This reduces the risk of distorting the intensities, albeit at the cost of \dQuote{under-normalizing} the data.
 
 See also \code{\link{diffIntDist}} for a method to assess the effects of batch normalization.
@@ -114,7 +142,7 @@ plot(ecdf(corrected[[2]][[3]][,1]), add=TRUE, col="red")
 
 # Similar effects with range-based normalization.
 # (Only in this simple example with scaling and shifting.)
-corrected <- normalizeBatch(all.x, batch.comp, mode="range")
+corrected <- normalizeBatch(all.x, batch.comp, mode="curve")
 par(mfrow=c(1,2))
 plot(ecdf(all.x[[1]][[3]][,1]), col="blue", main="Before")
 plot(ecdf(all.x[[2]][[3]][,1]), add=TRUE, col="red")
