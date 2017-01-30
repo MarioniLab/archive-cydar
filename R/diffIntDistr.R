@@ -1,4 +1,4 @@
-diffIntDist <- function(..., markers=NULL, npts=200) 
+diffIntDistr <- function(..., markers=NULL, npts=200) 
 # Computes several matrices of differences between samples
 # in the same and different batches. Distances in the intensity
 # distributions for each marker are computed as KS statistics.

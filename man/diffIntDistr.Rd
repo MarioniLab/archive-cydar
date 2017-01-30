@@ -1,12 +1,12 @@
-\name{diffIntDist}
-\alias{diffIntDist}
+\name{diffIntDistr}
+\alias{diffIntDistr}
 
 \title{Compute differences in intensity distributions}
 
 \description{Calculate the difference in the intensity distributions between samples across multiple batches.}
 
 \usage{
-diffIntDist(..., markers=NULL, npts=200) 
+diffIntDistr(..., markers=NULL, npts=200) 
 }
 
 \arguments{
@@ -66,7 +66,7 @@ Aaron Lun
 \examples{
 example(normalizeBatch)
 
-original <- do.call(diffIntDist, all.x)
+original <- do.call(diffIntDistr, all.x)
 par(mfrow=c(5,4), mar=c(2.1, 2.1, 2.1, 1.1))
 for (m in names(original$difference)) { 
     current <- original$difference[[m]] * 100
@@ -76,7 +76,7 @@ for (m in names(original$difference)) {
 }
 
 par(mfrow=c(5,4), mar=c(2.1, 2.1, 2.1, 1.1))
-fixed <- do.call(diffIntDist, corrected)
+fixed <- do.call(diffIntDistr, corrected)
 for (m in names(fixed$difference)) { 
     current <- fixed$difference[[m]] * 100
     is.inter <- fixed$index==0L
