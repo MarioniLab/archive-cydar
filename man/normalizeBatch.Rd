@@ -5,7 +5,7 @@
 \description{Perform normalization to correct intensities across batches with at least one common level.}
 
 \usage{
-normalizeBatch(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
+normalizeBatch(batch.x, batch.comp, mode="range", p=0.01)
 }
 
 \arguments{
@@ -14,7 +14,10 @@ normalizeBatch(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
 A list of factors (or elements coercible to factors) specifying the composition of each batch, i.e., which samples belong to which groups.
 Also can be \code{NULL}, see below.
 }
-\item{mode}{A string specifying whether range-based or warping normalization should be performed.}
+\item{mode}{
+A string or character vector of length equal to the number of markers, specifying whether range-based or warping normalization should be performed for each marker.
+This can take values of \code{"range"}, \code{"warp"} or \code{"none"} (in which case no normalization is performed).
+}
 \item{p}{A numeric scalar between 0 and 0.5, specifying the percentile used to define the range of the distribution for range-based normalization.}
 }
 
