@@ -100,5 +100,5 @@ cnt2 <- medIntensities(cnt, markers=marker.names[21])
 library(limma)
 median.int.21 <- assay(cnt2, "med.X21") 
 cell.count <- assay(cnt2, "counts") 
-el <- new("EList", list(E=median.int.21, weight=cell.count))
+el <- new("EList", list(E=median.int.21, weights=cell.count))
 }
