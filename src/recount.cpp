@@ -11,7 +11,6 @@ SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SE
     finder fx(exprs, use_markers, R_NilValue, R_NilValue);
     const matrix_info& EXPRS=fx.searcher->exprs;
     const size_t& nmarkers=EXPRS.nrow;
-    const size_t& ncells=EXPRS.ncol;
     const double* eptr=EXPRS.dptr;
     const std::deque<size_t>& used_markers=fx.searcher->get_used_markers();
     const size_t& nused=used_markers.size();
@@ -37,7 +36,6 @@ SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SE
     try {
         SET_VECTOR_ELT(output, 0, allocVector(VECSXP, ncenters));
         SEXP cell_assignments=VECTOR_ELT(output, 0);
-        SEXP outass;
         SET_VECTOR_ELT(output, 1, allocVector(INTSXP, ncenters));
         int* countptr=INTEGER(VECTOR_ELT(output, 1));
 

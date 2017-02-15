@@ -1,11 +1,11 @@
-normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
+normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
 # Performs warp- or range-based adjustment of different batches, given a 
 # list of 'x' objects like that used for 'prepareCellData'
 # and another list specifying the composition of samples per batch.
 #
 # written by Aaron Lun
 # created 27 October 2016
-# last modified 30 January 2017
+# last modified 31 January 2017
 {
     if (is.null(batch.comp)) {
         batch.comp <- lapply(batch.x, function(i) rep(1, length(i)))
@@ -42,6 +42,12 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
         }
     }
 
+    # Expanding possible modes.    
+    mode <- rep(mode, length.out=length(ref.markers))
+    if (is.null(names(mode))) {
+        names(mode) <- ref.markers
+    }
+
     # Computes sample- and batch-specific case weights to be used for all markers.
     batch.weights <- list()
     for (b in seq_len(nbatches)) { 
@@ -74,7 +80,6 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
     }
     names(output) <- names(batch.x)
 
-    mode <- match.arg(mode)
     for (m in ref.markers) {
         # Putting together observations.
         all.obs <- list()
@@ -86,8 +91,12 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
             }
             all.obs[[b]] <- unlist(cur.obs)
         }
-
-        if (mode=="warp") { 
+        
+        curmode <- match.arg(mode[m], c("none", "range", "warp"))
+        if (curmode=="none") {
+            # Skipping normalization. 
+            ;
+        } else if (curmode=="warp") { 
             # Performing warp-based normalization to a reference.
             converters <- .transformDistr(all.obs, batch.weights, m)
             for (b in seq_len(nbatches)) { 
@@ -97,7 +106,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
                     output[[b]][[s]][,m] <- converter(cur.out$exprs[[s]][,m])                
                 }
             }        
-        } else {
+        } else if (curmode=="range") {
             # Computing the average max/min.
             batch.min <- batch.max <- numeric(nbatches)
             for (b in seq_len(nbatches)) { 
@@ -127,7 +136,6 @@ normalizeBatch <- function(batch.x, batch.comp, mode=c("range", "warp"), p=0.01)
                     output[[b]][[s]][,m] <- cur.out$exprs[[s]][,m] * coef(fit)[2] + coef(fit)[1]
                 }
             }
-            
         }
     }
     return(output)
