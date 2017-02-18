@@ -33,26 +33,9 @@ This vignette will describe the steps necessary to perform this "differential ab
 
 # Setting up the data
 
+## Mocking up a data set
+
 The analysis starts from a set of Flow Cytometry Standard (FCS) files containing intensities for each cell.
-These intensities should already be transformed, e.g., using the `estimateLogicle` method from the `r Biocpkg("flowCore")` package.
-Any gating to remove dead cells, debris or low-quality events should have already been performed.
-We can then use the `read.ncdfFlowSet` function in the `r Biocpkg("ncdfFlow")` package to load intensities into the R session.
-To illustrate, we will use some example data from the `r Biocpkg("flowCore")` package, though the same principles apply for mass cytometry data.
-
-```{r}
-library(ncdfFlow)
-path <- system.file("extdata", "compdata", "data", package="flowCore")
-files <- list.files(path, full=TRUE)
-ncdf <- read.ncdfFlowSet(files)
-```
-
-Note that any markers that are not biologically relevant (e.g., barcodes, dead-or-alive stains, DNA) should be removed at this point.
-
-```{r}
-irrelevant <- grepl("BC", colnames(ncdf)) | grepl("DNA", colnames(ncdf)) 
-ncdf <- ncdf[,!irrelevant]
-```
-
 For the purposes of this vignette, we will simulate some data to demonstrate the methods below.
 This experiment will assay 30 markers, and contain 3 replicate samples in each of 2 biological conditions.
 We add two small differentially abundant subpopulations to ensure that we get something to look at later. 
@@ -60,28 +43,125 @@ We add two small differentially abundant subpopulations to ensure that we get so
 ```{r}
 ncells <- 20000
 nda <- 200
-nmarkers <- 30
+nmarkers <- 31
 down.pos <- 1.8
 up.pos <- 1.2
 conditions <- rep(c("A", "B"), each=3)
 combined <- rbind(matrix(rnorm(ncells*nmarkers, 1.5, 0.6), ncol=nmarkers),
                   matrix(rnorm(nda*nmarkers, down.pos, 0.3), ncol=nmarkers),
                   matrix(rnorm(nda*nmarkers, up.pos, 0.3), ncol=nmarkers))
+combined[,31] <- rnorm(nrow(combined), 1, 0.5) # last marker is a QC marker. 
+combined <- 10^combined # raw intensity values                  
 sample.id <- c(sample(length(conditions), ncells, replace=TRUE), 
                sample(which(conditions=="A"), nda, replace=TRUE), 
                sample(which(conditions=="B"), nda, replace=TRUE))
 colnames(combined) <- paste0("Marker", seq_len(nmarkers))
 ```
 
-We use this to construct a list of matrices for our downstream analysis.
+We use this to construct a `ncdfFlowSet` for our downstream analysis.
 
 ```{r}
+library(ncdfFlow)
 collected.exprs <- list()
 for (i in seq_along(conditions)) {
-    collected.exprs[[i]] <- combined[sample.id==i,,drop=FALSE]
+    stuff <- list(combined[sample.id==i,,drop=FALSE])
+    names(stuff) <- paste0("Sample", i)
+    collected.exprs[[i]] <- poolCells(stuff)
 }
 names(collected.exprs) <- paste0("Sample", seq_along(conditions))
+collected.exprs <- ncdfFlowSet(as(collected.exprs, "flowSet"))
 ```
+
+In practice, we can use the `read.ncdfFlowSet` function to load intensities from FCS files into the R session.
+The `ncdfFlowSet` object can replace all instances of `collected.exprs` in the downstream steps.
+
+## Pre-processing of intensities
+
+### Pooling cells together
+
+The intensities need to be transformed and gated prior to further analysis.
+We first pool all cells together into a single `flowFrame`, which will be used for construction of the transformation and gating functions for all samples.
+This avoids spurious differences from using sample-specific functions.
+
+```{r}
+pool.ff <- poolCells(collected.exprs)
+```
+
+### Estimating transformation parameters
+
+We use the `estimateLogicle` method from the `r Biocpkg("flowCore")` package to obtain a transformation function, and apply it to `pool.ff`.
+This performs a biexponential transformation with parameters estimated for optimal display.
+
+```{r}
+library(flowCore)
+trans <- estimateLogicle(pool.ff, colnames(pool.ff))
+proc.ff <- transform(pool.ff, trans)
+```
+
+### Gating out uninteresting cells
+
+The next step is to construct gates to remove uninteresting cells.
+There are several common gates that are used in mass cytometry data analysis, typically used in the following order:
+
+- Gating out calibration beads (high in Ce140) used to correct for intensity shifts in the mass spectrometer.
+- Gating on moderate intensities for the DNA markers, to remove debris and doublets.
+This can be done using the `dnaGate` function.
+- Gating on a dead/alive marker, to remove dead cells.
+Whether high or low values should be removed depends on the marker (e.g., high values to be removed for cisplatin).
+- Gating out low values for selected markers, e.g., CD45 when studying leukocytes, CD3 when studying T cells.
+
+To demonstrate, we will construct a gate to remove low values for the last marker, using the `outlierGate` function.
+The constructed gate is then applied to the `flowFrame`, only retaining cells falling within the gated region.
+
+```{r}
+gate.31 <- outlierGate(proc.ff, "Marker31", type="upper")
+gate.31
+filter.31 <- filter(proc.ff, gate.31)
+summary(filter.31@subSet)
+```
+
+We apply the gate before proceeding to the next marker to be gated.
+
+```{r]
+proc.ff <- Subset(proc.ff, gate.31)
+```
+
+### Applying functions to the original data
+
+Applying the transformation functions to the original data is simple.
+
+```{r}
+processed.exprs <- transform(collected.exprs, trans)
+```
+
+Applying the gates is similarly easy.
+Use methods the `r Biocpkg("flowViz")` package to see how gating diagnostics can be visualized.
+
+```{r}
+processed.exprs <- Subset(processed.exprs, gate.31)
+```
+
+Markers used for gating are generally ignored in the rest of the analysis.
+For example, as long as all cells contain DNA, we are generally not interested in differences in the amount of DNA.
+This is achieved by discarding those markers (in this case, marker 31).
+
+```{r}
+processed.exprs <- processed.exprs[,1:30]
+```
+
+## Normalizing intensities across batches
+
+By default, we do not perform any normalization of intensities between samples.
+This is because we assume that barcoding was used with multiplexed staining and mass cytometry.
+Thus, technical biases that might affect intensity should be the same in all samples, which means that they cancel out when comparing between samples.
+
+In data sets containing multiple batches of separately barcoded samples, we provide the `normalizeBatch` function to adjust the intensities.
+This uses range-based normalization to equalize the dynamic range between batches for each marker.
+Alternatively, it can use warping functions to eliminate non-linear distortions due to batch effects.
+
+The problem of normalization is much harder to solve in data sets with no barcoding at all.
+In such cases, the best solution is to expand the sizes of the hyperspheres to "smooth over" any batch effects.
+See the `expandRadius` function for more details.
 
 # Counting cells into hyperspheres
 
@@ -90,12 +170,13 @@ To do this, we first convert the intensity data into a format that is more amena
 The `prepareCellData` function works with either a list of matrices or directly with a `ncdfFlowSet` object, and generates a `cyData` object containing the reformatted intensities.
 
 ```{r}
-cd <- prepareCellData(collected.exprs)
+cd <- prepareCellData(processed.exprs)
 ```
 
 We then assign cells to hyperspheres using the `countCells` function.
 Each hypersphere is centred at a cell to restrict ourselves to non-empty hyperspheres, and has radius equal to 0.5 times the square root of the number of markers.
 The square root function adjusts for increased sparsity of the data at higher dimensions, while the 0.5 scaling factor allows cells with 10-fold differences in marker intensity (due to biological variability or technical noise) to be counted into the same hypersphere.
+Also see the `neighborDistances` function for guidance on choosing a value of `tol`.
 
 ```{r}
 cd <- countCells(cd, tol=0.5)
@@ -113,7 +194,7 @@ This will be required later for interpretation, as the marker intensities are re
 Shown below is the position of the first hypersphere, represented by its set of median intensities across all markers.
 
 ```{r}
-intensities(cd)
+head(intensities(cd))
 ```
 
 There is some light filtering in `countCells` to improve memory efficiency, which can be adjusted with the `filter` argument.
@@ -132,6 +213,7 @@ y <- DGEList(assay(cd), lib.size=cd$totals)
 First, we do some filtering to remove low-abundance hyperspheres with average counts below 5.
 These are mostly uninteresting as they do not provide enough evidence to reject the null hypothesis.
 Removing them also reduces computational work and the severity of the multiple testing correction.
+Lower values can also be used, but we do not recommend going below 1.
 
 ```{r}
 keep <- aveLogCPM(y) >= aveLogCPM(5, mean(cd$totals))
@@ -174,6 +256,8 @@ Such a simple approach would fail to account for the different densities of hype
 
 # Visualizing and interpreting the results
 
+## With static plots
+
 To interpret the DA hyperspheres, we use dimensionality reduction to visualize them in a convenient two-dimensional representation.
 This is done here with PCA, though for more complex data sets, we suggest using something like `r CRANpkg("Rtsne")`.
 
@@ -210,6 +294,28 @@ This caps the minimum and maximum intensities at the 5^th^ and 95^th^ percentile
 
 Note that both of these functions return a vector of colours, named with the corresponding numeric value of the log-fold change or intensity.
 This can be used to construct a colour bar -- see `?plotCellLogFC` for more details.
+
+## Using a Shiny app
+
+An alternative approach to interpretation is to examine each hypersphere separately, and to determine the cell type corresponding to the hypersphere's intensities.
+First, we prune done the number of hyperspheres to be examined in this manner.
+This is done by identifying "non-redundant" hyperspheres, i.e., hyperspheres that do not overlap hyperspheres with lower p-values.
+
+```{r}
+nonred <- findFirstSphere(intensities(cd), res$table$PValue)
+summary(nonred)
+```
+
+We pass these hyperspheres to the `interpretSpheres`, which creates a Shiny app where the intensities are displayed.
+The idea is to allow users to inspect each hypersphere, annotate it and then save the labels to R once annotation is complete.
+See the documentation for more details.
+
+```{r}
+all.coords <- prcomp(intensities(cd))
+app <- interpretSpheres(cd, select=nonred, metrics=res$table, run=FALSE,
+                        red.coords=all.coords$x[,1:2], red.highlight=is.sig) 
+# Set run=TRUE if you want the app to run automatically.
+```
 
 # Additional notes
 
