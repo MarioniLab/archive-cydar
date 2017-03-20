@@ -1,4 +1,4 @@
-countCells <- function(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, naive=FALSE)
+countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=10, naive=FALSE)
 # Extracts counts for each cell in a CyTOF experiment, based on the number of surrounding cells 
 # from each sample, given a prepared set of expression values for all cells in each sample.
 #

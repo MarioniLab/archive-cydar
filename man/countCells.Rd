@@ -8,7 +8,7 @@ Count the number of cells from each sample lying inside hyperspheres in high-dim
 }
 
 \usage{
-countCells(x, tol=0.5, BPPARAM=bpparam(), downsample=10, filter=10, naive=FALSE)
+countCells(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=10, naive=FALSE)
 }
 
 \arguments{
