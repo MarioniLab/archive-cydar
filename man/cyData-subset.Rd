@@ -61,6 +61,10 @@ Simultaneous row and column replacement is not allowed as this will introduce in
 % Specifically, a column might be referring to one sample for some rows, and another sample for other rows.
 }
 
+\value{
+A cyData object with different rows or columns, depending on whether subsetting or merging was performed.
+}
+
 \author{
 Aaron Lun
 }
