@@ -1,5 +1,5 @@
-#ifndef PACKER_HPP
-#define PACKER_HPP
+#ifndef PACKER_H
+#define PACKER_H
 #include "cydar.h"
 
 template<class Iter>

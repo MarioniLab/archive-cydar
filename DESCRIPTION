@@ -1,6 +1,6 @@
 Package: cydar
-Version: 0.99.17
-Date: 2017-01-30
+Version: 0.99.0
+Date: 2017-03-20
 Title: Using Mass Cytometry for Differential Abundance Analyses 
 Author: Aaron Lun <alun@wehi.edu.au>
 Maintainer: Aaron Lun <alun@wehi.edu.au>
@@ -10,8 +10,11 @@ Imports: plotrix, viridis, methods, shiny, graphics,
 Suggests: ncdfFlow, testthat, BiocGenerics, knitr, 
     edgeR, limma, glmnet, BiocStyle, flowStats
 biocViews: FlowCytometry, MultipleComparison, Proteomics 
-Description: Identifies differentially abundant populations 
-    between samples and groups in mass cytometry data.
+Description: Identifies differentially abundant populations between 
+    samples and groups in mass cytometry data. Provides methods for 
+    counting cells into hyperspheres, controlling the spatial false 
+    discovery rate, and visualizing changes in abundance in the 
+    high-dimensional marker space.
 License: GPL-3
 NeedsCompilation: yes
 VignetteBuilder: knitr

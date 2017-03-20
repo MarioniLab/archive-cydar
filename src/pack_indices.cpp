@@ -1,5 +1,5 @@
 #include "cydar.h"
-#include "packer.hpp"
+#include "packer.h"
 
 SEXP pack_indices(SEXP assignments, SEXP compact) try {
     if (!isNewList(assignments)) { 

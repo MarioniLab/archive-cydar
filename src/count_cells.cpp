@@ -1,5 +1,5 @@
 #include "objects.h"
-#include "packer.hpp"
+#include "packer.h"
 
 SEXP count_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP cluster_info, SEXP curcells, SEXP curmarks) try {
     finder fx(exprs, curmarks, centers, cluster_info);
