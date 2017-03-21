@@ -8,27 +8,29 @@ setClass("CyData", contains="SummarizedExperiment",
                  intensities="matrix"))
 
 setValidity2("CyData", function(object) {
+    txt <- character(0)
     if (storage.mode(.raw_cellIntensities(object))!="double") {
-        return("cellIntensities should be stored in double-precision")
+        txt <- c(txt, "cellIntensities should be stored in double-precision")
     }
     if (storage.mode(.raw_intensities(object))!="double") {
-        return("intensities should be stored in double-precision")
+        txt <- c(txt, "intensities should be stored in double-precision")
     }
     if (nrow(cellData(object))!=ncol(.raw_cellIntensities(object))) {
-        return("number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
+        txt <- c(txt, "number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
     }
     if (nrow(markerData(object))!=nrow(.raw_cellIntensities(object))) {
-        return("'markerData' and 'cellIntensities' must have the same number of rows")
+        txt <- c(txt, "'markerData' and 'cellIntensities' must have the same number of rows")
     }
     if (ncol(.raw_intensities(object))!=nrow(markerData(object))) { 
-        return("number of rows in 'markerData' and columns in 'intensities' must be equal")
+        txt <- c(txt, "number of rows in 'markerData' and columns in 'intensities' must be equal")
     }
     if (nrow(.raw_intensities(object))!=nrow(object)) { 
-        return("'intensities' and 'object' must have same number of rows")
+        txt <- c(txt, "'intensities' and 'object' must have the same number of rows")
     }
     if (nrow(.raw_intensities(object))!=length(.raw_cellAssignments(object))) {
-        return("number of rows in 'intensities' and length of 'cellAssignments' should be equal")
+        txt <- c(txt, "number of rows in 'intensities' and length of 'cellAssignments' should be equal")
     }
+    if (length(txt)) return(txt)
     return(TRUE)
 })
 

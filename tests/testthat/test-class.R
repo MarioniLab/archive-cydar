@@ -13,15 +13,15 @@ cell.assign <- rep(list(1), nrow(counts))
 # Checking constructor.
 cyd <- CyData(assay=counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign)
 expect_error(CyData(counts[1:10,], markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
-             "'intensities' and 'object' must have same number of rows")
+             "'intensities' and 'object' must have the same number of rows")
 expect_error(CyData(counts, markerData=marker.data[1:10,], intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
-             "'markerData' and 'cellIntensities' must have same number of rows")
+             "'markerData' and 'cellIntensities' must have the same number of rows")
 expect_error(CyData(counts, markerData=marker.data, intensities=medians[1:10,], cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
-             "'intensities' and 'object' must have same number of rows")
+             "'intensities' and 'object' must have the same number of rows")
 expect_error(CyData(counts, markerData=marker.data, intensities=medians[,1:10], cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign),
              "number of rows in 'markerData' and columns in 'intensities' must be equal")
 expect_error(CyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int[1:10,], cellData=cell.data, cellAssignments=cell.assign),
-             "'markerData' and 'cellIntensities' must have same number of rows")
+             "'markerData' and 'cellIntensities' must have the same number of rows")
 expect_error(CyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data[1:10,,drop=FALSE], cellAssignments=cell.assign),
              "number of rows in 'cellData' and columns in 'cellIntensities' should be equal")
 expect_error(CyData(counts, markerData=marker.data, intensities=medians, cellIntensities=cell.int, cellData=cell.data, cellAssignments=cell.assign[1:10]),
@@ -56,7 +56,7 @@ new.names <- paste0("X", seq_len(nmarkers(cyd)))
 rownames(markerData(cyd.x)) <- new.names
 expect_identical(new.names, rownames(markerData(cyd.x)))
 
-expect_error(markerData(cyd.x) <- marker.data[1:10,], "'markerData' and 'cellIntensities' must have same number of rows")
+expect_error(markerData(cyd.x) <- marker.data[1:10,], "'markerData' and 'cellIntensities' must have the same number of rows")
 
 cell.ids <- seq_len(500)
 cellData(cyd.x)$cell.id <- cell.ids
@@ -67,7 +67,7 @@ more.cell.int <- matrix(rgamma(10000, 1, 1), nrow=20)
 cellIntensities(cyd.x) <- more.cell.int
 expect_equivalent(cellIntensities(cyd.x), more.cell.int)
 expect_identical(rownames(cellIntensities(cyd.x)), markernames(cyd.x))
-expect_error(cellIntensities(cyd.x) <- cell.int[1:10,], "'markerData' and 'cellIntensities' must have same number of rows")
+expect_error(cellIntensities(cyd.x) <- cell.int[1:10,], "'markerData' and 'cellIntensities' must have the same number of rows")
 
 more.medians <- matrix(rgamma(2000, 1, 1), ncol=20)
 intensities(cyd.x) <- more.medians
