@@ -5,17 +5,15 @@ diffIntDistr <- function(..., markers=NULL, npts=200)
 #
 # written by Aaron Lun
 # created 13 January 2017
-# last modified 15 January 2017 
+# last modified 21 March 2017 
 {
     # Setting up inputs.
     all.out <- list(...)
-    batch.out <- list()
-    collected.markers <- list()
-    sample.names <- list()
     if (is.null(names(all.out))) { names(all.out) <- "" }
     names.absent <- is.na(names(all.out)) | names(all.out)==""
     names(all.out)[names.absent] <-  paste0("Batch", which(names.absent))
 
+    batch.out <- collected.markers <- sample.names <- vector("list", length(all.out))
     for (b in seq_along(all.out)) {
         current <- .pull_out_data(all.out[[b]])
         batch.out[[b]] <- current$exprs
@@ -29,7 +27,7 @@ diffIntDistr <- function(..., markers=NULL, npts=200)
         markers <- Reduce(intersect, collected.markers)
     }
    
-    output <- list()
+    output <- vector("list", length(markers))
     for (m in markers) {  
         # Getting the min/max range for the current marker.
         curmin <- curmax <- NULL
@@ -40,7 +38,7 @@ diffIntDistr <- function(..., markers=NULL, npts=200)
 
         # Computing densities for all samples.
         pts <- seq(from=curmin - 1e-6, to=curmax + 1e-6, length.out=npts)
-        densities <- list()
+        densities <- vector("list", length(batch.out))
         for (s in seq_along(batch.out)) {
             current <- batch.out[[s]][,m]
             densities[[s]] <- diff(findInterval(pts, sort(current)))/length(current)

@@ -6,7 +6,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 #
 # written by Aaron Lun
 # created 1 November 2016    
-# last modified 24 December 2017
+# last modified 21 March 2017
 {
     intvals <- intensities(x)
     nrows <- ceiling(ncol(intvals)/num.per.row)
@@ -160,7 +160,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
             if (!is.null(metrics)) { 
                 extra.metrics <- colnames(metrics)
-                extra.vals <- list() 
+                extra.vals <- vector("list", length(extra.metrics)) 
                 for (met in seq_along(extra.metrics)) {
                     my.val <- metrics[collected$current,met]
                     if (is.double(my.val)) {
@@ -318,8 +318,8 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 { 
     ci <- cellIntensities(x)
     all.markers <- rownames(markerData(x))
-    collected <- list()
 
+    collected <- vector("list", length(all.markers))
     for (m in seq_along(all.markers)) {
         cur.intensities <- ci[m,]
         collected[[m]] <- density(cur.intensities, ...)

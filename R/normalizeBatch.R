@@ -5,7 +5,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
 #
 # written by Aaron Lun
 # created 27 October 2016
-# last modified 31 January 2017
+# last modified 21 March 2017
 {
     if (is.null(batch.comp)) {
         batch.comp <- lapply(batch.x, function(i) rep(1, length(i)))
@@ -28,7 +28,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
     use.batches <- colnames(batch.weight)[!empty.factors]
 
     # Checking the number of markers we're dealing with.
-    batch.out <- list()
+    batch.out <- vector("list", nbatches)
     for (b in seq_len(nbatches)) { 
         out <- .pull_out_data(batch.x[[b]])
         batch.out[[b]] <- out
@@ -49,7 +49,7 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
     }
 
     # Computes sample- and batch-specific case weights to be used for all markers.
-    batch.weights <- list()
+    batch.weights <- vector("list", nbatches)
     for (b in seq_len(nbatches)) { 
         cur.comp <- batch.comp[[b]]
         cur.out <- batch.out[[b]]
@@ -67,11 +67,13 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
     }
 
     # Setting up an output object.
-    output <- list()
+    output <- vector("list", nbatches)
     for (b in seq_len(nbatches)) { 
-        cur.exprs <- list()   
         cur.out <- batch.out[[b]]
-        for (s in seq_along(cur.out$samples)) {
+        nsamples <- length(cur.out$samples)
+
+        cur.exprs <- vector("list", nsamples)
+        for (s in seq_len(nsamples)) {
             cur.exprs[[s]] <- cur.out$exprs[[s]]
             colnames(cur.exprs[[s]]) <- cur.out$markers
         }
@@ -82,11 +84,13 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
 
     for (m in ref.markers) {
         # Putting together observations.
-        all.obs <- list()
+        all.obs <- vector("list", nbatches)
         for (b in seq_len(nbatches)) { 
             cur.out <- batch.out[[b]]
-            cur.obs <- list()
-            for (s in seq_along(cur.out$exprs)) {
+            nsamples <- length(cur.out$exprs)
+
+            cur.obs <- vector("list", nsamples)
+            for (s in seq_len(nsamples)) { 
                 cur.obs[[s]] <- cur.out$exprs[[s]][,m]
             }
             all.obs[[b]] <- unlist(cur.obs)
@@ -143,8 +147,9 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
 
 .transformDistr <- function(all.obs, all.wts, name) {
     # Subsample intensities proportional to weights.
-    cur.ffs <- list()
-    for (b in seq_along(all.obs)) {
+    nbatch <- length(all.obs)
+    cur.ffs <- vector("list", nbatch)
+    for (b in seq_len(nbatch)) {
         cur.obs <- all.obs[[b]]
         cur.wts <- all.wts[[b]]
         chosen <- sample(cur.obs, length(cur.obs), prob=cur.wts, replace=TRUE)
@@ -163,8 +168,8 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
     new.fs <- normalize(fs, norm)
 
     # Defining warp functions (setting warpFuns doesn't really work, for some reason).
-    converter <- list()
-    for (b in seq_along(all.obs)) {
+    converter <- vector("list", nbatch)
+    for (b in seq_len(nbatch)) {
         old.i <- exprs(fs[[b]])[,1]
         new.i <- exprs(new.fs[[b]])[,1]
         converter[[b]] <- splinefun(old.i, new.i)

@@ -4,7 +4,7 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 1 December 2016
+# last modified 21 March 2017
 {
     .check_cell_data(x, check.clusters=!naive)
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
@@ -39,12 +39,14 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, markers=used, distance=distance, 
                     cluster.centers=cluster.centers, cluster.info=cluster.info, filter=filter, 
                     BPPARAM=BPPARAM)
-    out.cells <- out.index <- list()
+    
+    out.cells <- out.index <- vector("list", length(out))
     for (i in seq_along(out)) {
         if (is.character(out[[i]])) { stop(out[[i]]) }
         out.cells[[i]] <- out[[i]]$cells
         out.index[[i]] <- out[[i]]$index
     }
+
     out.index <- unlist(out.index, recursive=FALSE)
     out.cells <- unlist(out.cells, recursive=FALSE)
     names(out.cells) <- NULL

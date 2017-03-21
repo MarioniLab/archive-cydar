@@ -3,12 +3,12 @@ intensityRanges <- function(x, p=0.01)
 #
 # written by Aaron Lun
 # created 22 April 2016
-# last modified 14 November 2016
+# last modified 21 March 2017
 {
     .check_cell_data(x, check.clusters=FALSE)
     marker.names <- rownames(markerData(x))
     ci <- cellIntensities(x)
-    all.ranges <- list()
+    all.ranges <- vector("list", length(marker.names))
     for (m in seq_along(marker.names)) {
         all.ranges[[m]] <- quantile(ci[m,], p=c(p, 1-p))
     }

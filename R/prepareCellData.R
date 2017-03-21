@@ -4,7 +4,7 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
 #
 # written by Aaron Lun
 # created 14 August 2016
-# last modified 30 November 2016    
+# last modified 21 March 2017
 {
     on.exit({gc()}) # Getting rid of huge memory structures that have built up.
 
@@ -134,12 +134,12 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
         out <- kmeans(jitter(used.exprs), centers=N, ...)
     })
     by.clust <- split(seq_len(nrow(exprs)), out$cluster)
-    clust.info <- list()
-    new.exprs <- new.samples <- new.cells <- list()
     accumulated <- 0L
+    nclust <- length(by.clust) # should be N, but redefining just in case...
+    clust.info <- new.exprs <- new.samples <- new.cells <- vector("list", nclust)
 
     # Compiling to something that can be quickly accessed at the C++ level.
-    for (clust in seq_len(nrow(out$centers))) {
+    for (clust in seq_len(nclust)) {
         chosen <- by.clust[[clust]]
         current.vals <- t(exprs[chosen,,drop=FALSE])
         cur.dist <- sqrt(colSums((out$centers[clust,] - current.vals[used,,drop=FALSE])^2))

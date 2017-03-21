@@ -5,7 +5,7 @@ expandRadius <- function(x, design=NULL, markers=NULL, tol=0.5)
 #
 # written by Aaron Lun
 # created 27 October 2016   
-# last modified 29 November 2016 
+# last modified 21 March 2017
 {
     .check_cell_data(x, check.clusters=FALSE)
     ci <- cellIntensities(x)
@@ -16,8 +16,9 @@ expandRadius <- function(x, design=NULL, markers=NULL, tol=0.5)
     used <- .chosen_markers(markers, markernames(x))
 
     # Computing mean intensities for all (used) markers in all samples.
-    all.means <- list()
-    for (s in seq_len(ncol(x))) { 
+    nmarkers <- ncol(x)
+    all.means <- vector("list", nmarkers)
+    for (s in seq_len(nmarkers)) { 
         all.means[[s]] <- rowMeans(ci[,sample.id==s])[used]
     }
     all.means <- do.call(rbind, all.means)

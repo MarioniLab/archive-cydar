@@ -5,7 +5,8 @@ multiIntHist <- function(collected, cols=NULL,
 # The density at zero is also shown in points at zero.
 #
 # written by Aaron Lun
-# created 30 January 2017    
+# created 30 January 2017   
+# last modified 21 March 2017 
 {   
     if (is.null(cols)) { 
         cols <- grDevices::rainbow(length(collected))
@@ -13,9 +14,9 @@ multiIntHist <- function(collected, cols=NULL,
         cols <- rep(cols, length.out=length(collected))
     }
     
-    h.all <- h.zero <- list()
     max.x <- max(sapply(collected, max))
     breaks <- seq(from=0, to=max.x, length.out=50)
+    h.all <- h.zero <- vector("list", length(collected))
     for (batch in seq_along(collected)) {
         cur.vals <- collected[[batch]] 
         is.zero <- cur.vals < 1e-6 
