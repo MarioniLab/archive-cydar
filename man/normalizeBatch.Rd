@@ -82,7 +82,7 @@ This matches the format of \code{batch.x}.
 
 \examples{
 ### Mocking up some data: ###
-nmarkers <- 20
+nmarkers <- 10
 marker.names <- paste0("X", seq_len(nmarkers))
 all.x <- list()
 
@@ -115,9 +115,7 @@ plot(ecdf(all.x[[2]][[3]][,1]), add=TRUE, col="red")
 plot(ecdf(corrected[[1]][[3]][,1]), col="blue", main="After")
 plot(ecdf(corrected[[2]][[3]][,1]), add=TRUE, col="red")
 
-\dontrun{
 # Similar effects with warping normalization. 
 corrected <- normalizeBatch(all.x, batch.comp, mode="warp")
-}
 }
 
