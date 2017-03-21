@@ -69,7 +69,7 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     out.index <- out.index[o]
 
     all.ncells <- tabulate(sample.id+1L, length(samples))
-    output <- new("cyData", x, assays=Assays(list(counts=out.counts)), 
+    output <- new("CyData", x, assays=Assays(list(counts=out.counts)), 
                   intensities=out.coords, cellAssignments=out.cells,
                   elementMetadata=DataFrame(center.cell=out.index)) 
     output$sample.id <- seq_len(ncol(output))

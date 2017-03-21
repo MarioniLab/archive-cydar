@@ -9,7 +9,7 @@ intensityRanges(x, p=0.01)
 }
 
 \arguments{
-\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
+\item{x}{A CyData object produced by \code{\link{prepareCellData}}.}
 \item{p}{A numeric scalar specifying the quantile at which intensities should be bounded.}
 }
 

@@ -9,7 +9,7 @@ recountCells(x, markers, tol=0.5)
 }
 
 \arguments{
-\item{x}{A cyData object containing cell assignments into hyperspheres, such as that produced by \code{\link{countCells}}.}
+\item{x}{A CyData object containing cell assignments into hyperspheres, such as that produced by \code{\link{countCells}}.}
 \item{markers}{A vector specifying the markers for which hyperspheres should be constructed.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius.}
 }
@@ -45,7 +45,7 @@ Users can also avoid this problem by using a higher radius when constructing \co
 }
 
 \value{
-A cyData object containing counts and cell assignments for nested hyperspheres.
+A CyData object containing counts and cell assignments for nested hyperspheres.
 This follows the same format as the output from \code{\link{countCells}}, i.e., each row is a hypersphere and each column is a sample.
 Some fields are modified:
 \itemize{

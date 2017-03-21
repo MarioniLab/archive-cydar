@@ -31,7 +31,7 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
     }
   
     # Collating the output. 
-    cyData(cellIntensities=exprs,
+    CyData(cellIntensities=exprs,
            markerData=DataFrame(row.names=marker.names, used=used),
            colData=DataFrame(row.names=sample.names),
            assays=matrix(0L, 0, length(sample.names)),

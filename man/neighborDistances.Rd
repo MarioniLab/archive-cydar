@@ -9,7 +9,7 @@ neighborDistances(x, neighbors=50, downsample=50, as.tol=TRUE, naive=FALSE)
 }
 
 \arguments{
-\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
+\item{x}{A CyData object produced by \code{\link{prepareCellData}}.}
 \item{neighbors}{An integer scalar specifying the number of neighbours.}
 \item{downsample}{An integer scalar specifying the frequency with which cells are examined.}
 \item{as.tol}{A logical scalar specifying if the distances should be reported as tolerance values.}

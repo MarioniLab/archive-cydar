@@ -18,7 +18,7 @@ Alternatively, a ncdfFlowSet object containing the same information.}
 }
 
 \details{
-This function constructs a cyData object from the marker intensities of each cell in one or more samples.
+This function constructs a CyData object from the marker intensities of each cell in one or more samples.
 
 If \code{naive=FALSE}, this function performs k-means clustering on all the cells based on their marker intensities.
 The number of clusters is set to the square-root of the total number of cells.
@@ -34,7 +34,7 @@ By default, \code{markers=NULL} which means that all supplied markers will be us
 }
 
 \value{
-A cyData object with marker intensities for each cell stored in the \code{cellIntensities} slot.
+A CyData object with marker intensities for each cell stored in the \code{cellIntensities} slot.
 In addition:
 \itemize{
 \item Marker names are stored as the row names of the \code{markerData} slot.

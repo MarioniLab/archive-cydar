@@ -10,7 +10,7 @@ expandRadius(x, design=NULL, markers=NULL, tol=0.5)
 }
 
 \arguments{
-\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
+\item{x}{A CyData object produced by \code{\link{prepareCellData}}.}
 \item{design}{A numeric matrix specifying the experimental design.}
 \item{markers}{A vector specifying the markers to use.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius, see \code{\link{countCells}}.}

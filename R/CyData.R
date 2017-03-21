@@ -1,13 +1,13 @@
-# This sets up the cyData reference class.
+# This sets up the CyData reference class.
 
-setClass("cyData", contains="SummarizedExperiment", 
+setClass("CyData", contains="SummarizedExperiment", 
          slots=c(markerData="DataFrame",
                  cellIntensities="matrix",
                  cellData="DataFrame",
                  cellAssignments="list",
                  intensities="matrix"))
 
-setValidity2("cyData", function(object) {
+setValidity2("CyData", function(object) {
     if (storage.mode(object@cellIntensities)!="double") {
         return("cellIntensities should be stored in double-precision")
     }
@@ -39,7 +39,7 @@ scat <- function(fmt, vals=character(), exdent=2, ...) {
     cat(strwrap(txt, exdent=exdent, ...), sep="\n")
 }
 
-setMethod("show", signature("cyData"), function(object) {
+setMethod("show", signature("CyData"), function(object) {
     callNextMethod()
     scat("markers(%d): %s\n", rownames(object@markerData))
     scat("markerData names(%d): %s\n", colnames(object@markerData))
@@ -50,7 +50,7 @@ setMethod("show", signature("cyData"), function(object) {
 #############################################
 # Defining a reasonably helpful constructor.
 
-cyData <- function(markerData, intensities=NULL, cellAssignments=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
+CyData <- function(markerData, intensities=NULL, cellAssignments=NULL, cellIntensities=NULL, cellData=NULL, assays=NULL, ...) {
     marker.names <- rownames(markerData)
     if (is.null(marker.names)) {
         stop("rownames of 'markerData' must contain marker names")
@@ -85,14 +85,14 @@ cyData <- function(markerData, intensities=NULL, cellAssignments=NULL, cellInten
         names(cellAssignments) <- NULL
     }
 
-    new("cyData", markerData=markerData, cellIntensities=cellIntensities, cellData=cellData, 
+    new("CyData", markerData=markerData, cellIntensities=cellIntensities, cellData=cellData, 
         intensities=intensities, cellAssignments=cellAssignments, se)
 }
 
 #############################################
 # Subsetting, as the SE class doesn't use extractROWS or replaceROWs.
 
-setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
+setMethod("[", c("CyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
     if (!missing(i)) { 
         if (is.character(i)) { 
             fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
@@ -121,7 +121,7 @@ setMethod("[", c("cyData", "ANY", "ANY"), function(x, i, j, ..., drop=TRUE) {
     return(TRUE)
 }
 
-setMethod("[<-", c("cyData", "ANY", "ANY", "cyData"), function(x, i, j, ..., value) {
+setMethod("[<-", c("CyData", "ANY", "ANY", "CyData"), function(x, i, j, ..., value) {
     if (!missing(i)) {
         if (is.character(i)) { 
             fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
@@ -140,7 +140,7 @@ setMethod("[<-", c("cyData", "ANY", "ANY", "cyData"), function(x, i, j, ..., val
     callNextMethod(x=x, i=i, j=j, ..., value=value)
 })
 
-setMethod("subset", "cyData", function(x, i, j) {
+setMethod("subset", "CyData", function(x, i, j) {
     x[i, j]
 })
 
@@ -148,17 +148,17 @@ setMethod("subset", "cyData", function(x, i, j) {
 # Defining some getters and setters.
 
 setGeneric("markerData", function(x) standardGeneric("markerData"))
-setMethod("markerData", "cyData", function(x) x@markerData)
+setMethod("markerData", "CyData", function(x) x@markerData)
 
 setGeneric("markerData<-", function(x, value) standardGeneric("markerData<-"))
-setReplaceMethod("markerData", "cyData", function(x, value){
+setReplaceMethod("markerData", "CyData", function(x, value){
     x@markerData <- value
     validObject(x)
     return(x)
 })
 
 setGeneric("cellIntensities", function(x) standardGeneric("cellIntensities"))
-setMethod("cellIntensities", "cyData", function(x) {
+setMethod("cellIntensities", "CyData", function(x) {
     out <- x@cellIntensities
     rownames(out) <- rownames(x@markerData)
     colnames(out) <- rownames(x@cellData)
@@ -166,7 +166,7 @@ setMethod("cellIntensities", "cyData", function(x) {
 })
 
 setGeneric("cellIntensities<-", function(x, value) standardGeneric("cellIntensities<-"))
-setReplaceMethod("cellIntensities", "cyData", function(x, value){
+setReplaceMethod("cellIntensities", "CyData", function(x, value){
     x@cellIntensities <- value
     dimnames(x@cellIntensities) <- NULL
     validObject(x)
@@ -174,14 +174,14 @@ setReplaceMethod("cellIntensities", "cyData", function(x, value){
 })
 
 setGeneric("cellAssignments", function(x) standardGeneric("cellAssignments"))
-setMethod("cellAssignments", "cyData", function(x) {
+setMethod("cellAssignments", "CyData", function(x) {
     out <- x@cellAssignments
     names(out) <- rownames(x)
     return(out)
 })
 
 setGeneric("cellAssignments<-", function(x, value) standardGeneric("cellAssignments<-"))
-setReplaceMethod("cellAssignments", "cyData", function(x, value){
+setReplaceMethod("cellAssignments", "CyData", function(x, value){
     x@cellAssignments <- value
     names(x@cellAssignments) <- NULL
     validObject(x)
@@ -189,17 +189,17 @@ setReplaceMethod("cellAssignments", "cyData", function(x, value){
 })
 
 setGeneric("cellData", function(x) standardGeneric("cellData"))
-setMethod("cellData", "cyData", function(x) x@cellData)
+setMethod("cellData", "CyData", function(x) x@cellData)
 
 setGeneric("cellData<-", function(x, value) standardGeneric("cellData<-"))
-setReplaceMethod("cellData", "cyData", function(x, value){
+setReplaceMethod("cellData", "CyData", function(x, value){
     x@cellData <- value
     validObject(x)
     return(x)
 })
 
 setGeneric("intensities", function(x) standardGeneric("intensities"))
-setMethod("intensities", "cyData", function(x) {
+setMethod("intensities", "CyData", function(x) {
     out <- x@intensities
     rownames(out) <- rownames(x)
     colnames(out) <- rownames(x@markerData)
@@ -207,7 +207,7 @@ setMethod("intensities", "cyData", function(x) {
 })
 
 setGeneric("intensities<-", function(x, value) standardGeneric("intensities<-"))
-setReplaceMethod("intensities", "cyData", function(x, value){
+setReplaceMethod("intensities", "CyData", function(x, value){
     x@intensities <- value
     dimnames(x@intensities) <- NULL
     validObject(x)
@@ -215,25 +215,25 @@ setReplaceMethod("intensities", "cyData", function(x, value){
 })
 
 setGeneric("nmarkers", function(x) standardGeneric("nmarkers"))
-setMethod("nmarkers", "cyData", function(x) nrow(x@markerData))
+setMethod("nmarkers", "CyData", function(x) nrow(x@markerData))
 
 setGeneric("ncells", function(x) standardGeneric("ncells"))
-setMethod("ncells", "cyData", function(x) ncol(x@cellIntensities))
+setMethod("ncells", "CyData", function(x) ncol(x@cellIntensities))
 
-setMethod("markernames", "cyData", function(object) {
+setMethod("markernames", "CyData", function(object) {
     return(rownames(object@markerData))          
 })
 
-setReplaceMethod("markernames", c("cyData", "ANY"), function(object, value) {
+setReplaceMethod("markernames", c("CyData", "ANY"), function(object, value) {
     rownames(object@markerData) <- value
     return(object) 
 })
 
-setMethod("sampleNames", "cyData", function(object) {
+setMethod("sampleNames", "CyData", function(object) {
     return(colnames(object))          
 })
 
-setReplaceMethod("sampleNames", c("cyData", "ANY"), function(object, value) {
+setReplaceMethod("sampleNames", c("CyData", "ANY"), function(object, value) {
     colnames(object) <- value
     return(object) 
 })
@@ -241,7 +241,7 @@ setReplaceMethod("sampleNames", c("cyData", "ANY"), function(object, value) {
 #############################################
 # Combining objects.
 
-setMethod("cbind", "cyData", function(..., deparse.level=1) {
+setMethod("cbind", "CyData", function(..., deparse.level=1) {
     args <- unname(list(...))
     ref <- args[[1]]
     for (x in args[-1]) {
@@ -249,11 +249,11 @@ setMethod("cbind", "cyData", function(..., deparse.level=1) {
     }
     
     base <- do.call(cbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
-    new("cyData", base, intensities=ref@intensities, cellAssignments=ref@cellAssignments,
+    new("CyData", base, intensities=ref@intensities, cellAssignments=ref@cellAssignments,
         cellData=ref@cellData, cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
-setMethod("rbind", "cyData", function(..., deparse.level=1) {
+setMethod("rbind", "CyData", function(..., deparse.level=1) {
     args <- unname(list(...))
     ref <- args[[1]]
     for (x in args[-1]) {
@@ -263,11 +263,11 @@ setMethod("rbind", "cyData", function(..., deparse.level=1) {
     base <- do.call(rbind, lapply(args, function(x) { as(x, "SummarizedExperiment") }))
     new.intensities <- do.call(rbind, lapply(args, slot, name="intensities"))
     new.assignments <- unlist(lapply(args, slot, name="cellAssignments"), recursive=FALSE)
-    new("cyData", base, intensities=new.intensities, cellAssignments=new.assignments,
+    new("CyData", base, intensities=new.intensities, cellAssignments=new.assignments,
         cellData=ref@cellData, cellIntensities=ref@cellIntensities, markerData=ref@markerData)
 })
 
-setMethod("c", "cyData", function(x, ..., recursive = FALSE) {
+setMethod("c", "CyData", function(x, ..., recursive = FALSE) {
     rbind(x, ...)
 })
 

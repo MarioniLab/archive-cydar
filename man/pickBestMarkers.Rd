@@ -10,7 +10,7 @@ pickBestMarkers(x, chosen, markers=NULL, downsample=10, p=0.05, naive=FALSE)
 }
 
 \arguments{
-\item{x}{A cyData object, constructed using \code{\link{countCells}}.}
+\item{x}{A CyData object, constructed using \code{\link{countCells}}.}
 \item{chosen}{A vector specifying the rows of \code{x} corresponding to the hyperspheres of interest.} 
 \item{markers}{A vector specifying the markers to use in the LASSO regression.}
 \item{downsample}{A numeric scalar specifying the cell downsampling interval.}

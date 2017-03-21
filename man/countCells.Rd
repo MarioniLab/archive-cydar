@@ -12,7 +12,7 @@ countCells(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=10, naive=FA
 }
 
 \arguments{
-\item{x}{A cyData object produced by \code{\link{prepareCellData}}.}
+\item{x}{A CyData object produced by \code{\link{prepareCellData}}.}
 \item{tol}{A numeric scalar proportional to the hypersphere radius.}
 \item{BPPARAM}{A BiocParallelParam object specifying how parallelization is to be performed.}
 \item{downsample}{An integer scalar specifying the frequency with which cells are sampled to form hyperspheres.}
@@ -59,7 +59,7 @@ Neither this or \code{naive} will not affect the final results, only the speed w
 }
 
 \value{
-A cyData object containing the following information:
+A CyData object containing the following information:
 \describe{
 \item{\code{counts}}{An integer matrix of counts for each hypersphere (row) and sample (column) in the \code{Assays} slot.}
 \item{\code{intensities}:}{A numeric matrix of median intensities for each hypersphere (row) and marker (column), stored in the \code{intensities} slot.}

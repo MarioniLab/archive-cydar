@@ -35,12 +35,12 @@ recountCells <- function(x, markers, tol=0.5)
     combined.coords <- out.stats[[2]]
     colnames(combined.coords) <- markernames(x)
 
-    # Returning a cyData object.
+    # Returning a CyData object.
     new.markerdata <- markerData(x)
     new.markerdata$used <- used 
     new.metadata <- metadata(x)
     new.metadata$tol <- eff.tol
-    cyData(assays=list(counts=combined.counts),
+    CyData(assays=list(counts=combined.counts),
            intensities=combined.coords,
            cellAssignments=combined.ass,
            cellIntensities=cellIntensities(x),

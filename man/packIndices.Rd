@@ -23,7 +23,7 @@ This saves a lot of memory for storing cell assignments in hyperspheres, where t
 
 The \code{\link{countCells}} function will automatically fill in the \code{cellAssignments} slot of the output object with compressed index vectors.
 The \code{unpackIndices} function can be used to construct the full vector from some or all of these vectors, for manual use elsewhere.
-Conversely, users manually constructing cyData objects can use \code{packIndices} to compress the vectors and save space.
+Conversely, users manually constructing CyData objects can use \code{packIndices} to compress the vectors and save space.
 }
 
 \value{

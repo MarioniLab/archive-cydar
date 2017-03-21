@@ -1,15 +1,15 @@
-\name{cyData-class}
+\name{CyData-class}
 \docType{class}
 
-\alias{cyData}
-\alias{cyData-class}
-\alias{show,cyData-method}
+\alias{CyData}
+\alias{CyData-class}
+\alias{show,CyData-method}
 
-\title{cyData class and methods}
-\description{An overview of the cyData class and applicable methods.}
+\title{CyData class and methods}
+\description{An overview of the CyData class and applicable methods.}
 
 \usage{
-cyData(markerData, intensities=NULL, cellAssignments=NULL,
+CyData(markerData, intensities=NULL, cellAssignments=NULL,
     cellIntensities=NULL, cellData=NULL, assays=NULL, ...)
 }
 
@@ -23,7 +23,7 @@ cyData(markerData, intensities=NULL, cellAssignments=NULL,
 }
 
 \details{
-The cyData class is designed to store the cell counts for each group of cells (e.g., hyperspheres, clusters), along with the median intensities for each group.
+The CyData class is designed to store the cell counts for each group of cells (e.g., hyperspheres, clusters), along with the median intensities for each group.
 It inherits from the SummarizedExperiment class and contains the additional slots:
 \describe{
 \item{markerData}{A DataFrame containing information about each marker in each row.
@@ -47,13 +47,13 @@ It will also set \code{cellIntensities} to a matrix with no columns and \code{ce
 }
 
 \value{
-A cyData object containing the specified information.
+A CyData object containing the specified information.
 }
 
 \examples{
 # A minimal example.
 my.markers <- DataFrame(row.names=LETTERS)
-cyd.minimal <- cyData(markerData=my.markers)
+cyd.minimal <- CyData(markerData=my.markers)
 
 # Adding extra detail.
 counts <- matrix(rpois(1000, 10), ncol=10)
@@ -61,7 +61,7 @@ medians <- matrix(rgamma(1000, 1, 1), ncol=10)
 cell.int <- matrix(rgamma(10000, 1, 1), nrow=10)
 marker.data <- DataFrame(row.names=LETTERS[1:10])
 cell.data <- DataFrame(sample.id=sample(10, 1000, replace=TRUE))
-cyd <- cyData(assay=counts, markerData=marker.data, cellData=cell.data,
+cyd <- CyData(assay=counts, markerData=marker.data, cellData=cell.data,
     intensities=medians, cellIntensities=cell.int)
 }
 

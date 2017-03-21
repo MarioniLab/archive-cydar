@@ -15,7 +15,7 @@ importFrom("shiny",
         plotOutput, renderPlot, renderTable, tableOutput, 
         shinyApp, stopApp, runApp)
 
-exportClasses(cyData)
+exportClasses(CyData)
 
 exportMethods(nmarkers, 
     ncells,
@@ -41,7 +41,7 @@ export(countCells,
     neighborDistances,
     findFirstSphere,
     interpretSpheres,
-    cyData,
+    CyData,
     packIndices,
     unpackIndices,
     recountCells,

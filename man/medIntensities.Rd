@@ -9,12 +9,12 @@ medIntensities(x, markers)
 }
 
 \arguments{
-\item{x}{A cyData object where each row corresponds to a group of cells, such as that produced by \code{\link{countCells}}.}
+\item{x}{A CyData object where each row corresponds to a group of cells, such as that produced by \code{\link{countCells}}.}
 \item{markers}{A vector specifying the markers for which median intensities should be calculated.}
 }
 
 \value{
-A cyData object is returned equivalent to \code{x}, but with numeric matrices of sample-specific median intensities as additional elements of the \code{Assays} slot.
+A CyData object is returned equivalent to \code{x}, but with numeric matrices of sample-specific median intensities as additional elements of the \code{Assays} slot.
 }
 
 \details{
