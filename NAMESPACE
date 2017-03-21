@@ -1,16 +1,28 @@
 useDynLib(cydar, .registration=TRUE, .fixes="cxx_")
 
 import(BiocParallel, SummarizedExperiment, S4Vectors, methods)
+
 importFrom("plotrix", color.scale)
+
 importFrom("viridis", viridis)
-importFrom("stats", coef, kmeans, median, quantile, lm.fit, density, approx, lm, mad, splinefun)
-importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames, "sampleNames<-", exprs, normalize)
-importFrom("flowCore", rectangleGate, polygonGate, flowFrame, flowSet, normalization)
+
+importFrom("stats", coef, kmeans, median, quantile, lm.fit, density, approx, lm,
+    mad, splinefun)
+
+importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames,
+    "sampleNames<-", exprs, normalize)
+
+importFrom("flowCore", rectangleGate, polygonGate, flowFrame, flowSet,
+    normalization)
+
 importFrom("Biobase", AnnotatedDataFrame)
 
-importFrom("graphics", plot, points, lines, par, polygon, text, segments, legend)
+importFrom("graphics", plot, points, lines, par, polygon, text, segments,
+    legend)
+
 importFrom("shiny", 
-        column, fluidPage, fluidRow, pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
+        column, fluidPage, fluidRow, 
+        pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
         observeEvent, observe, actionButton, textInput, sliderInput, nearPoints,
         plotOutput, renderPlot, renderTable, tableOutput, 
         shinyApp, stopApp, runApp)

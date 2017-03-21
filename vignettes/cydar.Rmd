@@ -22,6 +22,7 @@ set.seed(100)
 # Detecting differentially abundant subpopulations in mass cytometry data
 Package: `r Rpackage("cydar")` <br />
 Author: Aaron Lun (alun@wehi.edu.au) <br />
+Last modified: 2017-03-21 <br />
 Compilation date: `r Sys.Date()`
 
 # Introduction

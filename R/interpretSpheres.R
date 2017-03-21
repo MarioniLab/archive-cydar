@@ -72,28 +72,27 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
     # Main panel arguments.
     main.args <- list(plotOutput("histograms", height = plot.height), hr())
-    main.args <- append(main.args, 
-                        list(
-                             fluidRow(
-                                      column(
-                                             textInput("label", "Label:"),
-                                             actionButton("addlabel", "Add label"),
-                                             width=4
-                                             ),
-                                      column(
-                                             textInput("gotonum", "Go to sphere:"),
-                                             actionButton("go", "Go"),
-                                             actionButton("previous", "Previous"),
-                                             actionButton("continue", "Next"),
-                                             width=4
-                                             ),
-                                      column( 
-                                             actionButton("finish", "Save to R"),
-                                             width=4
-                                             )
-                                      )
-                             )
-                        )
+    main.args <- append(main.args, list(
+        fluidRow(
+            column(
+                textInput("label", "Label:"),
+                actionButton("addlabel", "Add label"),
+                width=4
+            ),
+            column(
+                textInput("gotonum", "Go to sphere:"),
+                actionButton("go", "Go"),
+                actionButton("previous", "Previous"),
+                actionButton("continue", "Next"),
+                width=4
+            ),
+            column( 
+                actionButton("finish", "Save to R"),
+                width=4
+            )
+        )
+    ))
+
     if (add.nav) { 
         main.args <- append(main.args, list(hr(), plotOutput("navplot", height = red.plot.height, click = "nav_click")))
     }    
@@ -103,25 +102,25 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
     # Generating the page layout.
     ui <- pageWithSidebar(
-                          headerPanel("Interpreting hypersphere coordinates"),
-                          sidebarPanel(
-                                       h4("Metrics"),
-                                       tableOutput("metrics"),
-                                       hr(size=30),
-                                       h4("History:"),
-                                       tableOutput("history"), 
-                                       hr(size=30),
-                                       h4("Closest labelled:"),
-                                       tableOutput("closest"), 
-                                       hr(size=30),
-                                       sliderInput("intbar", "Intensity interval for current hypersphere (%):",
-                                                   min = 0, max = 100, value = 95),
-                                       textInput("extraplot", "Add more hyperspheres:", value=""),
-                                       actionButton("addtoplot", "Add to plot"),
-                                       actionButton("clearplot", "Clear")
-                                       ),
-                          do.call(mainPanel, main.args)
-                          )
+        headerPanel("Interpreting hypersphere coordinates"),
+        sidebarPanel(
+            h4("Metrics"),
+            tableOutput("metrics"),
+            hr(size=30),
+            h4("History:"),
+            tableOutput("history"), 
+            hr(size=30),
+            h4("Closest labelled:"),
+            tableOutput("closest"), 
+            hr(size=30),
+            sliderInput("intbar", "Intensity interval for current hypersphere (%):",
+                min = 0, max = 100, value = 95),
+            textInput("extraplot", "Add more hyperspheres:", value=""),
+            actionButton("addtoplot", "Add to plot"),
+            actionButton("clearplot", "Clear")
+        ),
+        do.call(mainPanel, main.args)
+    )
 
     # Setting up updating functions.
     updatePlot <- function(output, extras=NULL) {
