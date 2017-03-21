@@ -28,6 +28,7 @@ diffIntDistr <- function(..., markers=NULL, npts=200)
     }
    
     output <- vector("list", length(markers))
+    names(output) <- markers
     for (m in markers) {  
         # Getting the min/max range for the current marker.
         curmin <- curmax <- NULL
