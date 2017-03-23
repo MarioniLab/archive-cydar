@@ -116,6 +116,8 @@ plot(ecdf(corrected[[1]][[3]][,1]), col="blue", main="After")
 plot(ecdf(corrected[[2]][[3]][,1]), add=TRUE, col="red")
 
 # Similar effects with warping normalization. 
-corrected <- normalizeBatch(all.x, batch.comp, mode="warp")
+if (.Platform$OS.type!="windows") {
+    wcorrected <- normalizeBatch(all.x, batch.comp, mode="warp")
+}
 }
 
