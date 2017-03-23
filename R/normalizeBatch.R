@@ -162,7 +162,6 @@ normalizeBatch <- function(batch.x, batch.comp, mode="range", p=0.01)
     colnames(fs) <- name
 
     # Applying warping normalization, as described in the flowStats vignette.
-    require(flowStats)
     norm <- normalization(normFunction=function(x, parameters, ...) { flowStats::warpSet(x, parameters, ...) },
                           parameters=name, arguments=list(monwrd=TRUE))
     new.fs <- normalize(fs, norm)
