@@ -16,9 +16,11 @@ struct naive_holder {
     size_t get_ncells() const;
     size_t get_nmarkers() const;
     const std::deque<size_t>& get_used_markers() const;
-    
-    virtual void search(const double*, const bool, size_t, double, const bool);
-   
+
+    double compute_marker_distance(const double*, const double*) const;    
+    virtual void search_all(const double*, double, const bool);
+    virtual void search_nn (const double*, size_t, const bool);
+  
     matrix_info exprs;
     std::deque<size_t> rows_to_use;
     std::deque<size_t> neighbors;
@@ -30,7 +32,8 @@ struct naive_holder {
 struct convex_holder : public naive_holder {
     convex_holder(SEXP, SEXP, SEXP, SEXP);
     ~convex_holder();
-    void search(const double*, const bool, size_t, double, const bool);
+    void search_all(const double*, double, const bool);
+    void search_nn (const double*, size_t, const bool);
 
     matrix_info centers;
     std::deque<int> clust_start;
