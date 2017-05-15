@@ -19,8 +19,8 @@ SEXP get_nndist(SEXP cells, SEXP use_markers, SEXP centers, SEXP clust_info, SEX
         std::deque<double>& distances=fx.searcher->distances;
         
         for (size_t h=0; h<ncells; h+=downsample) {
-            fx.searcher->find_nearest_neighbors(h, NN+1, true); // Avoiding itself.
-            std::copy(distances.begin()+1, distances.end(), optr);
+            fx.searcher->find_nearest_neighbors(h, NN, true); 
+            std::copy(distances.begin(), distances.end(), optr);
             optr+=NN;
         }
     } catch (std::exception& e) {

@@ -4,11 +4,11 @@
 extern "C" {
 
 static const R_CallMethodDef all_call_entries[] = {
-    REGISTER(get_knn_distance, 4),
     REGISTER(compute_density, 4),
     REGISTER(compute_hyperstats, 5),
     REGISTER(count_cells, 6),
     REGISTER(get_nndist, 6),
+    REGISTER(find_knn, 6),
     REGISTER(drop_redundant, 5),
     REGISTER(pack_indices, 2),
     REGISTER(recount_cells, 5),

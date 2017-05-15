@@ -5,7 +5,7 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 #
 # written by Aaron Lun
 # created 23 May 2016
-# last modified 2 December 2016
+# last modified 15 May 2017
 {
     if (length(pvalues)!=nrow(coords)) { stop("coords 'nrow' and p-value vector length are not the same") }
     colnames(coords) <- seq_len(ncol(coords)) # dummy colnames to keep it happy.
@@ -36,12 +36,16 @@ spatialFDR <- function(coords, pvalues, neighbors=50, bandwidth=NULL, naive=FALS
 
     if (is.null(bandwidth)) { 
         neighbors <- as.integer(neighbors)
-        if (neighbors <= 0L) { stop("'neighbors' must be a positive integer") }
-
-        # Figuring out the bandwidth for KDE, as the median of distances to the 50th neighbour.
-        allbands <- .Call(cxx_get_knn_distance, new.coords, cluster.centers, cluster.info, neighbors)
-        if (is.character(allbands)) { stop(allbands) }
-        bandwidth <- median(allbands)
+        if (neighbors==0L) { 
+            bandwidth <- 0 
+        } else if (neighbors < 0L) { 
+            stop("'neighbors' must be a non-negative integer") 
+        } else { 
+            # Figuring out the bandwidth for KDE, as the median of distances to the n-th neighbour.
+            allbands <- .Call(cxx_find_knn, new.coords, cluster.centers, cluster.info, neighbors, -1L, NULL)
+            if (is.character(allbands)) { stop(allbands) }
+            bandwidth <- median(allbands)
+        }
     } else {
         bandwidth <- as.double(bandwidth)
     }

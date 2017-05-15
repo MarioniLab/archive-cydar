@@ -55,7 +55,17 @@ void naive_holder::find_neighbors (const double* current, double threshold, cons
 
 void naive_holder::find_nearest_neighbors (size_t cell, size_t nn, const bool dist) {
     if (cell >= exprs.ncol) { throw std::runtime_error("cell index out of range"); }
-    search_nn(exprs.dptr + exprs.nrow*cell, nn, dist);
+    search_nn(exprs.dptr + exprs.nrow*cell, nn+1, dist);
+
+    // Removing the cell itself, if it's in the NN range. Otherwise removing the last NN.
+    size_t i=0;
+    for (; i<neighbors.size()-1; ++i) {
+        if (neighbors[i]==cell) { break; }
+    }
+    neighbors.erase(neighbors.begin()+i);
+    if (dist) {
+        distances.erase(distances.begin()+i);
+    }
     return;
 }
 
@@ -202,7 +212,7 @@ void convex_holder::search_nn(const double* current, size_t nn, const bool dist)
      * The aim is to go through the nearest centers first, to 
      * get the shortest 'threshold' possible.
      */
-    std::deque<std::pair<double, int> > center_order(ncenters); 
+    std::deque<std::pair<double, size_t> > center_order(ncenters); 
     size_t center;
     for (center=0; center<ncenters; ++center, centerx+=nmarkers) {
         center_order[center].first=compute_marker_distance(current, centerx);
@@ -225,12 +235,16 @@ void convex_holder::search_nn(const double* current, size_t nn, const bool dist)
         if (!cur_ncells) { continue; }
         const double* cur_dist=clust_dist[center];
         const double& maxdist=cur_dist[cur_ncells-1];
-        if (threshold + maxdist < dist2center) { continue; }
 
-        // Cells within this cluster are potentially countable; proceeding to count them
-        lower_bd=dist2center - threshold;
-//        upper_bd=dist2center + threshold; // Doesn't help much.
-        index=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd)-cur_dist;
+        if (R_FINITE(threshold)) {
+            if (threshold + maxdist < dist2center) { continue; }
+            // Cells within this cluster are potentially countable; proceeding to count them
+            lower_bd=dist2center - threshold;
+//          upper_bd=dist2center + threshold; // Doesn't help much.
+            index=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd)-cur_dist;
+        } else {
+            index=0;
+        }
         const int& cur_start=clust_start[center];
         other=exprs.dptr + nmarkers * (cur_start + index);
 

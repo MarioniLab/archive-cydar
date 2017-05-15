@@ -12,9 +12,10 @@ suppressWarnings(cd <- prepareCellData(list(A=coords)))
 for (nn in c(10L, 20L, 50L)) { 
     # Testing the nearest neighbour machinery.
     ci <- cellIntensities(cd)
-    allbands <- .Call(cydar:::cxx_get_knn_distance, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, nn)
+    allbands <- .Call(cydar:::cxx_find_knn, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, nn, -1L, NULL)
     
     refdist <- as.matrix(dist(t(ci)))
+    diag(refdist) <- NA
     refbands <- apply(refdist, 1, function(x) { sort(x)[nn] })
     names(refbands) <- NULL
     expect_equal(allbands, refbands)
@@ -23,6 +24,7 @@ for (nn in c(10L, 20L, 50L)) {
     bandwidth <- median(refbands)
     densities <- .Call(cydar:::cxx_compute_density, ci, metadata(cd)$cluster.centers, metadata(cd)$cluster.info, bandwidth)
 
+    diag(refdist) <- 0
     weightmat <- 1 - (refdist/bandwidth)^3
     weightmat[weightmat < 0] <- 0
     refdens <- rowSums(weightmat^3)
@@ -35,7 +37,7 @@ for (nn in c(10L, 20L, 50L)) {
     x2 <- spatialFDR(coords, pval, bandwidth=bandwidth)
     expect_equal(x, x2)
     x3 <- spatialFDR(coords, pval, neighbors=nn, naive=TRUE)
-    expect_equal(x, x2)
+    expect_equal(x, x3)
 
     # Comparing to a straight-up implementation.
     refdist <- as.matrix(dist(coords))
@@ -73,7 +75,7 @@ for (nn in c(10L, 20L, 50L)) {
 
 # Testing silly outputs.
 pval <- rbeta(ncells, 1, 10)
-suppressWarnings(x <- spatialFDR(coords, pval, neighbors=1))
+suppressWarnings(x <- spatialFDR(coords, pval, neighbors=0))
 suppressWarnings(x2 <- spatialFDR(coords, pval, bandwidth=0))
 expect_equal(x, x2)
 expect_equal(x, p.adjust(pval, method="BH"))
