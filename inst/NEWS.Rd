@@ -5,7 +5,7 @@
 \section{Version 1.1.1}{\itemize{
 \item Added labelSpheres() function for labelling unannotated hyperspheres.
 
-\item Removed export for diffIntDistr(), which is meant to be an internal function.
+\item Exported multiIntHist() for plotting multiple intensity histograms.
 
 \item Slight fix to spatialFDR(), which now computes the correct n-th nearest neighbour.
 }

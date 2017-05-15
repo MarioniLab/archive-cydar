@@ -63,7 +63,9 @@ Such differences may be present when batches are confounded with uninteresting b
 In such cases, range-based normalization with \code{mode="range"} is recommended as it is more constrained in how the intensities are adjusted.
 This reduces the risk of distorting the intensities, albeit at the cost of \dQuote{under-normalizing} the data.
 
-See also \code{\link{diffIntDistr}} for a method to assess the effects of batch normalization.
+It is advisable to inspect the intensity distributions before and after normalization, to ensure that the methods have behaved appropriately.
+This can be done by constructing histograms for each marker with \code{\link{multiIntHist}}.
+See also \code{\link{diffIntDistr}} for a quantitative measure of similarity between distributions.
 }
 
 \value{
@@ -76,7 +78,8 @@ This matches the format of \code{batch.x}.
 \seealso{
 \code{\link{prepareCellData}},
 \code{\link{diffIntDistr}},
-\code{\link{normalization}},
+\code{\link{multiIntHist}},
+\code{\link[flowCore]{normalization}},
 \code{\link[flowStats]{warpSet}} 
 }
 

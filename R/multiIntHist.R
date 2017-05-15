@@ -1,6 +1,4 @@
-multiIntHist <- function(collected, cols=NULL,
-                         xlab="Intensity", ylab="Density", ..., 
-                         lwd=2, lty=1, pch=16, cex=2) 
+multiIntHist <- function(collected, cols=NULL, xlab="Intensity", ylab="Density", lwd=2, lty=1, pch=16, cex=2, ...) 
 # This plots multiple intensity distributions as histogram outlines on a single plot.
 # The density at zero is also shown in points at zero.
 #
