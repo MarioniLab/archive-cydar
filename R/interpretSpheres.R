@@ -6,12 +6,13 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 #
 # written by Aaron Lun
 # created 1 November 2016    
-# last modified 21 March 2017
+# last modified 16 May 2017
 {
     intvals <- intensities(x)
     nrows <- ceiling(ncol(intvals)/num.per.row)
     plot.height <- plot.height*nrows
     collim <- intensityRanges(x, p=p)
+    all.dens <- .prepareDensity(x, ...)
 
     intvals <- as.matrix(intvals)
     N <- nrow(intvals)
@@ -62,31 +63,24 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
     }
 
     # Setting up the internal plotting and storage.
-    collected <- new.env()
-    collected$labels <- labels
-
-    collected$current <- select[1]
-    collected$interval <- 0
-    collected$history <- rep(NA_integer_, 5)
-    all.dens <- .prepareDensity(x, ...)
-
+    collected <- reactiveValues(current=select[1], labels=labels, history=rep(NA_integer_, 5))
+   
     # Main panel arguments.
     main.args <- list(plotOutput("histograms", height = plot.height), hr())
     main.args <- append(main.args, list(
         fluidRow(
             column(
                 textInput("label", "Label:"),
-                actionButton("addlabel", "Add label"),
                 width=4
             ),
             column(
-                textInput("gotonum", "Go to sphere:"),
-                actionButton("go", "Go"),
+                textInput("gotonum", "Go to sphere:", select[1]),
                 actionButton("previous", "Previous"),
                 actionButton("continue", "Next"),
                 width=4
             ),
             column( 
+                br(),
                 actionButton("finish", "Save to R"),
                 width=4
             )
@@ -116,174 +110,92 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
             sliderInput("intbar", "Intensity interval for current hypersphere (%):",
                 min = 0, max = 100, value = 95),
             textInput("extraplot", "Add more hyperspheres:", value=""),
-            actionButton("addtoplot", "Add to plot"),
             actionButton("clearplot", "Clear")
         ),
         do.call(mainPanel, main.args)
     )
 
-    # Setting up updating functions.
-    updatePlot <- function(output, extras=NULL) {
-        output$histograms <- renderPlot({
-            par(mfrow=c(nrows, num.per.row), mar=c(2.1, 1.1, 2.1, 1.1))
-            .generateDensity(intvals, all.dens, xlim=xlim, collim=collim, ordering=m.order,
-                             current=collected$current, extras=extras, 
-                             interval=collected$interval, cell.int=cell.int, cell.assign=cell.assign)
-        })
-        if (add.nav) {
-            output$navplot <- renderPlot({
-                par(mar=c(5.1, 4.1, 1.1, 10.1))
-                col <- rep("grey", N)
-                if (!is.null(red.highlight)) {
-                    col[red.highlight] <- "orange"
-                }
-                plot(red.coords$x, red.coords$y, xlab="Dimension 1", ylab="Dimension 2", col=col, pch=16, cex.lab=1.4)
-                has.label <- collected$labels!="" 
-                points(red.coords$x[has.label], red.coords$y[has.label], col="black", pch=16, cex=1.5)
-                points(red.coords$x[collected$current], red.coords$y[collected$current], col="red", pch=16, cex=2)
-                uout <- par()$usr
-                par(xpd=TRUE)
-                legend(uout[2] + (uout[2]-uout[1])*0.01, uout[4], col=c("grey", "orange", "black", "red"), 
-                       pch=16, legend=c("Not sig.", "Significant", "Labelled", "Current"))
-            })
-        }
-        if (!is.null(add.plot)) {
-            output$addplots <- renderPlot({ add.plot(collected$current, x) }) 
-        }
-    }
-
-    updateMetrics <- function(output) {
-        output$metrics <- renderTable({
-            out.metrics <- c("Number", "Label")
-            out.vals <- c(collected$current, collected$labels[collected$current])
-
-            if (!is.null(metrics)) { 
-                extra.metrics <- colnames(metrics)
-                extra.vals <- vector("list", length(extra.metrics)) 
-                for (met in seq_along(extra.metrics)) {
-                    my.val <- metrics[collected$current,met]
-                    if (is.double(my.val)) {
-                        my.val <- format(my.val, digits=5)
-                    } else {
-                        my.val <- as.character(my.val)
-                    }
-                    extra.vals[[met]] <- my.val
-                }
-                out.metrics <- c(out.metrics, extra.metrics)
-                out.vals <- c(out.vals, unlist(extra.vals))
-            }
-
-            data.frame(paste0("<b>", out.metrics, "</b>"), out.vals)
-        }, colnames=FALSE, sanitize.text.function=function(x) {x})
-    }
-
-    updateHistory <- function(output, advance=TRUE) {
-        output$history <- renderTable({
-            if (advance) {
-                collected$history <- c(collected$current, collected$history)[1:5]
-            }
-            data.frame(Number=as.character(collected$history),
-                Label=collected$labels[collected$history])
-        })
-    }
-
-    updateClosest <- function(output) {
-        output$closest <- renderTable({
-            is.anno <- which(collected$labels!="")
-            if (length(is.anno)) { 
-                all.dist <- sqrt(colSums((t(intvals[is.anno,,drop=FALSE]) - intvals[collected$current,])^2))
-            } else {
-                all.dist <- numeric(0)
-            }
-            o <- order(all.dist)[1:5]
-            closest <- is.anno[o]
-            data.frame(Distance=all.dist[o], Number=as.character(closest), Label=collected$labels[closest])
-        })
-    }
-
     # Setting up the server actions.
-    server <- function(input, output) {
-        updatePlot(output)
-        updateMetrics(output)
-        updateHistory(output)
-        updateClosest(output)
+    server <- function(input, output, session) {
+        reactiveHistPlot <- makeHistograms(input, N=N, mfrow=c(nrows, num.per.row), coords=intvals, density.data=all.dens, 
+            xlim=xlim, collim=collim, ordering=m.order, cell.int=cell.int, cell.assign=cell.assign, collected=collected)
+        output$histograms <- renderPlot({ reactiveHistPlot() })
 
-        observeEvent(input$previous, {
-            attempt <- select[tail(which(select < collected$current), 1)]
-            if (length(attempt)!=1L) { 
-                warning("no index in 'select' is lower than the current index")
+        if (add.nav) {
+            reactiveNavPlot <- makeNavPlot(input, N=N, red.highlight=red.highlight, red.coords=red.coords, collected=collected)
+            output$navplot <- renderPlot({ reactiveNavPlot() })
+        }
+
+        if (!is.null(add.plot)) { 
+            reactiveAddPlot <- reactive({ add.plot(input$gotonum, x) })
+            output$addplots <- renderPlot({ reactiveAddPlot() })
+        }
+
+        reactiveMetricTable <- makeMetricTable(input, N=N, metrics=metrics, collected=collected)
+        output$metrics <- renderTable({
+            reactiveMetricTable()
+        }, colnames=FALSE, sanitize.text.function=function(x) {x})
+
+        reactiveHistoryTable <- makeHistoryTable(input, N=N, collected=collected)
+        output$history <- renderTable({ reactiveHistoryTable() })
+
+        reactiveClosestTable <- makeClosestTable(input, N=N, intvals=intvals, collected=collected)
+        output$closest <- renderTable({ reactiveClosestTable() })
+
+        # Setting up events to observe.
+        observeEvent(input$gotonum, {
+            current <- collected$current
+            if (is.na(current) || current < 1L || current > N) {
+                warning("specified index is not a number within range")
             } else {
-                collected$current <- attempt
+                collected$current <- current
+                updateTextInput(session, "label", value=collected$labels[current])
             }
-            updatePlot(output)
-            updateMetrics(output)
-            updateHistory(output)
-            updateClosest(output)
-        })
+        }) 
 
-        observeEvent(input$continue, {
-            attempt <- select[which(select > collected$current)[1]]
-            if (is.na(attempt)) { 
+        observeEvent(input$continue, {                     
+            current <- collected$current
+            attempt <- select[which(select > current)[1]]
+            if (is.na(attempt)) {
                 warning("no index in 'select' is larger than the current index")
             } else {
                 collected$current <- attempt
+                updateTextInput(session, "gotonum", value=attempt)
+                updateTextInput(session, "label", value=collected$labels[current])
             }
-            updatePlot(output)
-            updateMetrics(output)
-            updateHistory(output)  
-            updateClosest(output)  
+        })                  
+
+        observeEvent(input$previous, {                     
+            current <- collected$current
+            attempt <- select[tail(which(select < current), 1)]
+            if (length(attempt)==0) {
+                warning("no index in 'select' is smaller than the current index")
+            } else { 
+                collected$current <- attempt
+                updateTextInput(session, "gotonum", value=attempt)
+                updateTextInput(session, "label", value=collected$labels[current])
+            }
         })
 
-        observeEvent(input$go, {
-            candidate <- as.integer(input$gotonum)
-            if (is.finite(candidate) && candidate >= 1L && candidate <= N) {
-                collected$current <- candidate
-            } else {
-                warning("index out of range of number of hyperspheres")
-            }
-            updatePlot(output)
-            updateMetrics(output)
-            updateHistory(output)
-            updateClosest(output)
+        observeEvent(input$label, {
+            collected$labels[collected$current] <- input$label 
         })
 
-        observe({
-            if (add.nav) { 
+
+        if (add.nav) {
+            observe({
                 all.near <- nearPoints(red.coords, input$nav_click, xvar = "x", yvar = "y", threshold=Inf, maxpoints=1)
                 if (nrow(all.near)) {
-                    collected$current <- as.integer(rownames(all.near)[1])
-                    updatePlot(output)
-                    updateMetrics(output)
-                    updateHistory(output)
-                    updateClosest(output)
+                    current <- as.integer(rownames(all.near)[1])
+                    collected$current <- current 
+                    updateTextInput(session, "gotonum", value=current)
+                    updateTextInput(session, "label", value=collected$labels[current])
                 }
-            }
-        })
-
-        observeEvent(input$intbar, {
-            collected$interval <- input$intbar/100
-            updatePlot(output)
-        })
-
-        observeEvent(input$addtoplot, {
-            extras <- as.integer(unlist(strsplit(input$extraplot, " ") ))
-            extras <- extras[!is.na(extras)]
-            invalid <- !is.finite(extras) && extras < 1L && extras > N
-            if (any(invalid)) {
-                warning("indices out of range of number of hyperspheres")
-                extras <- extras[!invalid]
-            }
-            updatePlot(output, extras=extras)
-        })
+            })
+        }
 
         observeEvent(input$clearplot, {
-            updatePlot(output)
-        })
-
-        observeEvent(input$addlabel, {
-            collected$labels[collected$current] <- input$label
-            updateHistory(output, advance=FALSE)
-            updateMetrics(output)
+            updateTextInput(session, "extraplot", "")
         })
 
         observeEvent(input$finish, {
@@ -298,6 +210,100 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
         return(app)
     }
 }
+
+#######################################################
+# Setting up functions to return histograms.
+
+makeHistograms <- function(input, N, mfrow, ..., collected) {
+    reactive({
+        extras <- as.integer(unlist(strsplit(input$extraplot, " ") ))    
+        extras <- extras[!is.na(extras)]
+        invalid <- !is.finite(extras) | extras < 1L | extras > N
+        if (any(invalid)) {    
+            warning("indices out of range of number of hyperspheres")
+            extras <- extras[!invalid]
+        }
+        par(mfrow=mfrow, mar=c(2.1, 1.1, 2.1, 1.1))
+        .generateDensity(..., current=collected$current, extras=extras, interval=input$intbar)
+    })
+}
+
+makeNavPlot <- function(input, N, red.highlight, red.coords, collected) { 
+    reactive({
+        par(mar=c(5.1, 4.1, 1.1, 10.1))
+        col <- rep("grey", N)
+        if (!is.null(red.highlight)) {
+            col[red.highlight] <- "orange"
+        }
+        plot(red.coords$x, red.coords$y, xlab="Dimension 1", ylab="Dimension 2", col=col, pch=16, cex.lab=1.4)
+
+        has.label <- collected$labels!=""
+        points(red.coords$x[has.label], red.coords$y[has.label], col="black", pch=16, cex=1.5)
+        current <- collected$current
+        points(red.coords$x[current], red.coords$y[current], col="red", pch=16, cex=2)
+
+        uout <- par()$usr
+        par(xpd=TRUE)
+        legend(uout[2] + (uout[2]-uout[1])*0.01, uout[4], col=c("red", "black", "orange", "grey"), 
+            pch=16, legend=c("Current", "Labelled", "Highlighted", "Other"))
+    })
+}
+
+makeMetricTable <- function(input, N, metrics, collected) {
+    reactive({ 
+        current <- collected$current
+        labels <- collected$labels
+        out.metrics <- c("Number", "Label")
+        out.vals <- c(current, labels[current])
+
+        if (!is.null(metrics)) { 
+            extra.metrics <- colnames(metrics)
+            extra.vals <- vector("list", length(extra.metrics)) 
+            for (met in seq_along(extra.metrics)) {
+                my.val <- metrics[collected$current,met]
+                if (is.double(my.val)) {
+                    my.val <- format(my.val, digits=5)
+                } else {
+                    my.val <- as.character(my.val)
+                }
+                extra.vals[[met]] <- my.val
+            }
+            out.metrics <- c(out.metrics, extra.metrics)
+            out.vals <- c(out.vals, unlist(extra.vals))
+        }
+        data.frame(paste0("<b>", out.metrics, "</b>"), out.vals)
+    })
+}
+
+makeHistoryTable <- function(input, N, collected) { 
+    reactive({ 
+        current <- collected$current
+        if (is.na(collected$history[1]) || current!=collected$history[1]) { 
+            collected$history <- c(current, collected$history)[1:5]
+        }
+        data.frame(Number=as.character(collected$history),
+            Label=collected$labels[collected$history])
+    })
+}
+
+makeClosestTable <- function(input, N, intvals, collected) {
+    reactive({
+        labels <- collected$labels
+        is.anno <- which(labels!="")
+        if (length(is.anno)) { 
+            current <- collected$current
+            all.dist <- sqrt(colSums((t(intvals[is.anno,,drop=FALSE]) - intvals[current,])^2))
+        } else {
+            all.dist <- numeric(0)
+        }
+        o <- order(all.dist)[1:5]
+        closest <- is.anno[o]
+        data.frame(Distance=all.dist[o], Number=as.character(closest), Label=labels[closest])
+    })
+}
+
+#######################################################
+# Utility functions.
 
 .subsetToIndex <- function(subset, N, argname) {
     if (is.logical(subset)) { 
@@ -337,6 +343,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
     all.cols <- viridis(256)
 
     if (interval > 0) { 
+        interval <- interval/100
         cur.assign <- unpackIndices(cell.assign[current])
         cur.cell.int <- cell.int[,cur.assign[[1]],drop=FALSE]
         half.left <- (1-interval)/2

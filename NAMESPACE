@@ -22,8 +22,9 @@ importFrom("graphics", plot, points, lines, par, polygon, text, segments,
 
 importFrom("shiny", 
         column, fluidPage, fluidRow, 
-        pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr,
-        observeEvent, observe, actionButton, textInput, sliderInput, nearPoints,
+        pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr, br,
+        actionButton, textInput, sliderInput, updateTextInput,
+        observeEvent, observe, nearPoints, reactive, reactiveValues,
         plotOutput, renderPlot, renderTable, tableOutput, 
         shinyApp, stopApp, runApp)
 

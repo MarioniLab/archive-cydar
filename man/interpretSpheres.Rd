@@ -60,7 +60,7 @@ This moves across hyperspheres specified by \code{select}, i.e., pressing \dQuot
 By default, \code{select=NULL} which means that the app will progress through all hyperspheres in \code{x}.
 It is often worth setting \code{select}, e.g., to non-redundant significant hyperspheres in order to reduce the number of elements that need to be inspected.
 
-Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to} field.
+Users can also jump to a particular row/hypersphere by providing an integer scalar in the \dQuote{Go to sphere} field.
 This specifies the row index for the hypersphere of interest, and works for either selected or unselected hyperspheres.
 However, pressing \dQuote{Previous} or \dQuote{Next} will jump to the nearest index of the selected hyperspheres. 
 The navigation history at any given time is shown in the side bar.
@@ -118,10 +118,11 @@ labels <- shiny::runApp(app)
 labels <- interpretSpheres(cnt)
 }
 
-# Doing it with metrics.
+# Doing it with metrics and coordinates.
 N <- nrow(cnt)
 metrics <- data.frame(logFC=rnorm(N), PValue=runif(N))
-app <- interpretSpheres(cnt, metrics=metrics, run=FALSE)
+coords <- matrix(rnorm(N*2), ncol=2)
+app <- interpretSpheres(cnt, red.coord=coords, metrics=metrics, run=FALSE)
 
 # Doing it with an extra plot.
 app <- interpretSpheres(cnt, run=FALSE, add.plot=function(i, x) {
