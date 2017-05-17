@@ -80,15 +80,28 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
                 width=4
             ),
             column( 
-                br(),
                 actionButton("finish", "Save to R"),
-                width=4
+                width=2
             )
         )
     ))
 
     if (add.nav) { 
-        main.args <- append(main.args, list(hr(), plotOutput("navplot", height = red.plot.height, click = "nav_click")))
+        main.args <- append(main.args, list(hr(), 
+            plotOutput("navplot", height = red.plot.height, click = "nav_click"),
+            hr(),
+            fluidRow(
+                column(
+                    actionButton("updatelabels", "Update labels"),
+                    width=2
+                ),
+                column(
+                    selectInput("labeltouse", "Label to plot", choices=""),
+                    width=4
+                ), br(),
+                plotOutput("labplot", height = red.plot.height)
+            )
+        ))
     }    
     if (!is.null(add.plot)) {
         main.args <- append(main.args, list(hr(), plotOutput("addplots", height = add.plot.height)))
@@ -192,10 +205,23 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
                     updateTextInput(session, "label", value=collected$labels[current])
                 }
             })
+
+            observeEvent(input$updatelabels, {
+                available <- setdiff(unique(collected$labels), "")
+                new.select <- input$labeltouse
+                if (! new.select %in% available) {
+                    new.select <- NULL
+                }
+                updateSelectInput(session, "labeltouse", choices=available, select=new.select)
+                collected$more.labels <- labelSpheres(intvals, collected$labels)
+            })
+
+            reactiveLabPlot <- makeLabPlot(input, red.coords, collected)
+            output$labplot <- renderPlot({ reactiveLabPlot() })
         }
 
         observeEvent(input$clearplot, {
-            updateTextInput(session, "extraplot", "")
+            updateTextInput(session, "extraplot", value="")
         })
 
         observeEvent(input$finish, {
@@ -289,9 +315,9 @@ makeHistoryTable <- function(input, N, collected) {
 makeClosestTable <- function(input, N, intvals, collected) {
     reactive({
         labels <- collected$labels
-        is.anno <- which(labels!="")
+        current <- collected$current
+        is.anno <- setdiff(which(labels!=""), current)
         if (length(is.anno)) { 
-            current <- collected$current
             all.dist <- sqrt(colSums((t(intvals[is.anno,,drop=FALSE]) - intvals[current,])^2))
         } else {
             all.dist <- numeric(0)
@@ -299,6 +325,19 @@ makeClosestTable <- function(input, N, intvals, collected) {
         o <- order(all.dist)[1:5]
         closest <- is.anno[o]
         data.frame(Distance=all.dist[o], Number=as.character(closest), Label=labels[closest])
+    })
+}
+
+makeLabPlot <- function(input, red.coords, collected) {
+    reactive({
+        if (input$labeltouse=="") { 
+            plot.new()
+        } else {
+            highlight <- which(collected$more.labels==input$labeltouse)
+            par(mar=c(5.1, 4.1, 1.1, 10.1))
+            plot(red.coords$x, red.coords$y, xlab="Dimension 1", ylab="Dimension 2", col="grey80", pch=16, cex.lab=1.4)
+            points(red.coords$x[highlight], red.coords$y[highlight], col="dodgerblue", pch=16, cex=1.2)
+        }
     })
 }
 
