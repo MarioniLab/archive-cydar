@@ -4,9 +4,21 @@ labelSpheres <- function(coords, labels, naive=FALSE)
 # written by Aaron Lun 
 # created 15 May 2017
 {
+    stopifnot(identical(nrow(coords), length(labels)))
+    has.label <- labels!=""
+    if (!any(has.label) | all(has.label)) { 
+        return(labels) 
+    }
+
+    fresh.labels <- labels[has.label]
+    ulabels <- unique(fresh.labels)
+    if (length(ulabels)==1) { 
+        labels[] <- ulabels
+        return(labels)
+    }
+
     # Preparing data for counting.
     coords <- as.matrix(coords)    
-    has.label <- labels!=""
     labelled <- coords[has.label,,drop=FALSE]
     npts <- nrow(labelled)
     if (!naive) { 
@@ -27,6 +39,6 @@ labelSpheres <- function(coords, labels, naive=FALSE)
     if (is.character(closest)) {
         stop(closest)
     }
-    new.labels <- labels[has.label][hyper.ids][closest+1L]
+    new.labels <- fresh.labels[hyper.ids][closest+1L]
     return(new.labels)
 }

@@ -118,21 +118,29 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
 .reorganize_cells <- function(exprs, sample.id, cell.id, used=NULL, ...) 
 # Reorganizing for fast lookup via K-means clustering.
 {
-    N <- ceiling(sqrt(nrow(exprs)))
-    if (is.null(used)) used <- rep(TRUE, ncol(exprs))
+    if (is.null(used)) { 
+        used <- rep(TRUE, ncol(exprs))
+    }
     if (!all(used)) { 
         used.exprs <- exprs[,used,drop=FALSE]
     } else {
         used.exprs <- exprs
     }
 
-    tryCatch({
-        out <- kmeans(used.exprs, centers=N, ...)
-    }, error=function(e) {
-    }, finally={
-        # Adding jitter, if many cells are duplicated.
-        out <- kmeans(jitter(used.exprs), centers=N, ...)
-    })
+    # Running K-means, with protection against the case where N=nrow.
+    N <- ceiling(sqrt(nrow(exprs)))
+    if (N==nrow(exprs)) { 
+        out <- list(cluster=seq_len(N), centers=used.exprs)
+    } else { 
+        tryCatch({
+            out <- suppressWarnings(kmeans(used.exprs, centers=N, ...))
+        }, error=function(e) {
+        }, finally={
+            # Adding jitter, if many cells are duplicated.
+            out <- suppressWarnings(kmeans(jitter(used.exprs), centers=N, ...))
+        })
+    }
+    
     by.clust <- split(seq_len(nrow(exprs)), out$cluster)
     accumulated <- 0L
     nclust <- length(by.clust) # should be N, but redefining just in case...
