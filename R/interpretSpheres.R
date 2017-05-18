@@ -70,7 +70,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
     main.args <- append(main.args, list(
         fluidRow(
             column(
-                textInput("label", "Label:"),
+                textInput("label", "Label sphere:"),
                 width=4
             ),
             column(
@@ -92,14 +92,16 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
             hr(),
             fluidRow(
                 column(
-                    actionButton("updatelabels", "Update labels"),
-                    width=2
-                ),
+                    actionButton("updatelabels", "Update labels"), br(), br(),
+                    selectInput("labeltouse", "Labels to plot:", choices="", multiple=TRUE, selectize=FALSE, size=10),
+                    HTML("<b>Legend:</b>"),
+                    htmlOutput("lablegend"),
+                    width=3
+                ), 
                 column(
-                    selectInput("labeltouse", "Label to plot", choices=""),
-                    width=4
-                ), br(),
-                plotOutput("labplot", height = red.plot.height)
+                    plotOutput("labplot", height = red.plot.height),
+                    width=8
+                )
             )
         ))
     }    
@@ -157,7 +159,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
         # Setting up events to observe.
         observeEvent(input$gotonum, {
-            current <- collected$current
+            current <- as.integer(input$gotonum)
             if (is.na(current) || current < 1L || current > N) {
                 warning("specified index is not a number within range")
             } else {
@@ -166,7 +168,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
             }
         }) 
 
-        observeEvent(input$continue, {                     
+        observeEvent(input$continue, {
             current <- collected$current
             attempt <- select[which(select > current)[1]]
             if (is.na(attempt)) {
@@ -192,7 +194,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
         observeEvent(input$label, {
             collected$labels[collected$current] <- input$label 
-        })
+        }, priority=1)
 
 
         if (add.nav) {
@@ -208,16 +210,20 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
 
             observeEvent(input$updatelabels, {
                 available <- setdiff(unique(collected$labels), "")
-                new.select <- input$labeltouse
-                if (! new.select %in% available) {
-                    new.select <- NULL
-                }
+                new.select <- intersect(input$labeltouse, available)
                 updateSelectInput(session, "labeltouse", choices=available, select=new.select)
                 collected$more.labels <- labelSpheres(intvals, collected$labels)
             })
 
             reactiveLabPlot <- makeLabPlot(input, red.coords, collected)
-            output$labplot <- renderPlot({ reactiveLabPlot() })
+            output$labplot <- renderPlot({ reactiveLabPlot() }) 
+
+            output$lablegend <- renderUI({
+                cols <- .obtainColours(input$labeltouse)
+                as.rgb <- col2rgb(cols)
+                stuff <- sprintf('<span style="color:rgb(%i, %i, %i)">%s</span><br />', as.rgb[1,], as.rgb[2,], as.rgb[3,], names(cols))
+                HTML(stuff)
+            })
         }
 
         observeEvent(input$clearplot, {
@@ -330,13 +336,15 @@ makeClosestTable <- function(input, N, intvals, collected) {
 
 makeLabPlot <- function(input, red.coords, collected) {
     reactive({
-        if (input$labeltouse=="") { 
+        if (length(input$labeltouse)==0 || identical(input$labeltouse, "")) { 
             plot.new()
         } else {
-            highlight <- which(collected$more.labels==input$labeltouse)
-            par(mar=c(5.1, 4.1, 1.1, 10.1))
             plot(red.coords$x, red.coords$y, xlab="Dimension 1", ylab="Dimension 2", col="grey80", pch=16, cex.lab=1.4)
-            points(red.coords$x[highlight], red.coords$y[highlight], col="dodgerblue", pch=16, cex=1.2)
+            all.colours <- .obtainColours(input$labeltouse)
+            for (lab in input$labeltouse) { 
+                autolab <- which(collected$more.labels==lab)
+                points(red.coords$x[autolab], red.coords$y[autolab], col=all.colours[lab], pch=16, cex=1.1)
+            }
         }
     })
 }
@@ -429,5 +437,12 @@ makeLabPlot <- function(input, red.coords, collected) {
     }
 
     return(invisible())
+}
+
+.obtainColours <- function(labels) 
+# Generate colours.
+{
+    all.colours <- rainbow(length(labels))
+    setNames(all.colours, labels)
 }
 

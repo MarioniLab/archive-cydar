@@ -84,6 +84,16 @@ This is usually done in a hypersphere-specific manner, where the first argument 
 For example, the abundances of all samples can be visualized directly for each hypersphere in the app.
 }
 
+\section{Inspecting label propagation}{
+If \code{red.dim} is supplied and at least one cell is labelled, the \dQuote{Update labels} button can be used to propagate the labels to surrounding cells.
+Specifically, for each unlabelled cell, the closest labelled cell is identified and its label is assigned to the unlabelled cell.
+A plot is then created showing the distribution of cells for each label in the low-dimensional space.
+
+This functionality is useful for determining how the labels would be automatically assigned by \code{\link{labelSpheres}}.
+If many distinct clusters have the same label, it suggests that more manual labelling is required to distinguish clusters.
+Note that the automatically assigned labels are \emph{not} recorded, they are only used here for visualization purposes.
+}
+
 \value{
 If \code{run=FALSE}, a Shiny app is returned that can be run with \code{\link{runApp}}.
 This passes control to a browser window in which labels can be entered for each hypersphere.
