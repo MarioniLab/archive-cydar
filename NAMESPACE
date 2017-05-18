@@ -7,7 +7,7 @@ importFrom("plotrix", color.scale)
 importFrom("viridis", viridis)
 
 importFrom("stats", coef, kmeans, median, quantile, lm.fit, density, approx, lm,
-    mad, splinefun)
+    mad, splinefun, setNames)
 
 importMethodsFrom("flowCore", markernames, "markernames<-", sampleNames,
     "sampleNames<-", exprs, normalize)
@@ -18,14 +18,16 @@ importFrom("flowCore", rectangleGate, polygonGate, flowFrame, flowSet,
 importFrom("Biobase", AnnotatedDataFrame)
 
 importFrom("graphics", plot, points, lines, par, polygon, text, segments,
-    legend)
+    legend, hist, plot.new)
+
+importFrom("grDevices", rainbow, col2rgb)
 
 importFrom("shiny", 
         column, fluidPage, fluidRow, 
-        pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr, br,
-        actionButton, textInput, sliderInput, updateTextInput,
+        pageWithSidebar, sidebarPanel, mainPanel, headerPanel, h4, hr, br, HTML,
+        actionButton, textInput, sliderInput, updateTextInput, selectInput, updateSelectInput,
         observeEvent, observe, nearPoints, reactive, reactiveValues,
-        plotOutput, renderPlot, renderTable, tableOutput, 
+        plotOutput, renderPlot, renderTable, tableOutput, htmlOutput, renderUI,
         shinyApp, stopApp, runApp)
 
 exportClasses(CyData)

@@ -211,7 +211,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
             observeEvent(input$updatelabels, {
                 available <- setdiff(unique(collected$labels), "")
                 new.select <- intersect(input$labeltouse, available)
-                updateSelectInput(session, "labeltouse", choices=available, select=new.select)
+                updateSelectInput(session, "labeltouse", choices=available, selected=new.select)
                 collected$more.labels <- labelSpheres(intvals, collected$labels)
             })
 
