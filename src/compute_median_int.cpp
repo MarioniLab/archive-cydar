@@ -3,15 +3,12 @@
 #include "utils.h"
 #include "objects.h"
 
-SEXP compute_median_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments, SEXP curmarks) try {
+SEXP compute_median_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments) try {
     // Setting up inputs.
-    finder fx(exprs, curmarks, R_NilValue, R_NilValue);
-    const matrix_info& EXPRS=fx.searcher->exprs;
+    const matrix_info& EXPRS=check_matrix(exprs);
     const size_t& nmarkers=EXPRS.nrow;
     const size_t& ncells=EXPRS.ncol;
     const double* eptr=EXPRS.dptr;
-    const std::deque<size_t>& used_markers=fx.searcher->get_used_markers();
-    const size_t& nused=used_markers.size();
 
     if (!isNewList(assignments)) { 
         throw std::runtime_error("'assignments' must be a list of packed assignments");
@@ -35,39 +32,31 @@ SEXP compute_median_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments
     }
 
     // Setting up output vectors. 
-    SEXP output=PROTECT(allocVector(VECSXP, nused));
+    SEXP output=PROTECT(allocVector(VECSXP, nmarkers));
     try { 
-        size_t u, s;
-        std::deque<std::deque<double*> > outptrs(nused);
-        for (u=0; u<nused; ++u) {
+        std::deque<std::deque<double*> > outptrs(nmarkers);
+        for (size_t u=0; u<nmarkers; ++u) {
             SET_VECTOR_ELT(output, u, allocMatrix(REALSXP, ngroups, nsamples));
             std::deque<double*>& current=outptrs[u];
             if (nsamples) { current.push_back(REAL(VECTOR_ELT(output, u))); }
-            for (s=1; s<nsamples; ++s) {
+            for (int s=1; s<nsamples; ++s) {
                 current.push_back(current[s-1] + ngroups);
             }
         }
 
-        SEXP curass;
-        const int* iptr;
-        int ndex;
         std::deque<int> collected;
-        size_t icx;
-
         std::deque<std::deque<double> > all_intensities(nsamples);
-        const double* curpoint;
-        size_t mid;
 
         for (int g=0; g<ngroups; ++g) {
             // Unpacking the assignments.
-            curass=VECTOR_ELT(assignments, g);
+            SEXP curass=VECTOR_ELT(assignments, g);
             if (!isInteger(curass)) { 
                 throw std::runtime_error("assignment vectors should be integer");
             }
-            iptr=INTEGER(curass);
-            ndex=LENGTH(curass);
+            const int* iptr=INTEGER(curass);
+            const int ndex=LENGTH(curass);
             unpack_index_vector(collected, iptr, iptr+ndex);
-            for (icx=0; icx<collected.size(); ++icx) { 
+            for (size_t icx=0; icx<collected.size(); ++icx) { 
                 int& current=--(collected[icx]); // Getting to zero-index.
                 if (current < 0 || current >= ncells) {
                     throw std::runtime_error("cell assignment indices out of range");
@@ -75,22 +64,22 @@ SEXP compute_median_int(SEXP exprs, SEXP nsamp, SEXP sample_id, SEXP assignments
             }
                 
             // Computing the median intensity.
-            for (u=0; u<nused; ++u) {
-                curpoint = eptr + used_markers[u];
+            for (size_t u=0; u<nmarkers; ++u) {
+                const double* curpoint = eptr + u;
 
-                for (icx=0; icx<collected.size(); ++icx) {
+                for (size_t icx=0; icx<collected.size(); ++icx) {
                     const int& curdex=collected[icx];
                     all_intensities[sample_ids[curdex]].push_back(*(curpoint + curdex*nmarkers));
                 }
 
-                for (s=0; s<nsamples; ++s) {
+                for (int s=0; s<nsamples; ++s) {
                     std::deque<double>& curint=all_intensities[s];
                     if (curint.empty()) {
                         outptrs[u][s][g]=R_NaReal;
                         continue;
                     }
                     std::sort(curint.begin(), curint.end());
-                    mid=size_t(curint.size()/2);
+                    size_t mid=curint.size()/2;
                     if (curint.size()%2==0) { 
                         outptrs[u][s][g]=(curint[mid]+curint[mid-1])/2;
                     } else {

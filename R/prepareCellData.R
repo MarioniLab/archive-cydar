@@ -4,7 +4,7 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
 #
 # written by Aaron Lun
 # created 14 August 2016
-# last modified 21 March 2017
+# last modified 24 May 2017
 {
     on.exit({gc()}) # Getting rid of huge memory structures that have built up.
 
@@ -39,39 +39,6 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
            metadata=metadata)
 }
 
-.check_cell_data <- function(x, check.clusters=TRUE) 
-# Checks incoming cell data, that it was properly processed by prepareCellData.
-{
-    sample.id <- cellData(x)$sample.id
-    stopifnot(all(sample.id > 0L & sample.id <= ncol(x)))
-
-    central.id <- rowData(x)$center.cell
-    if (!is.null(central.id)) { 
-        stopifnot(all(central.id > 0L & central.id <= ncells(x)))
-    }
-
-    if (check.clusters) {
-        cluster.centers <- metadata(x)$cluster.centers        
-        if (is.null(cluster.centers)) {
-            stop("'cluster.centers' must be defined for non-naive counting")
-        }
-        stopifnot(nrow(cluster.centers)==nmarkers(x))
-        
-        cluster.info <- metadata(x)$cluster.info
-        if (is.null(cluster.info)) {
-            stop("'cluster.info' must be defined for non-naive counting")
-        }
-        
-        stopifnot(ncol(cluster.centers)==length(cluster.info))
-        for (clust in cluster.info) {
-            stopifnot(!is.unsorted(clust[[2]]))
-            stopifnot(clust[[1]] >= 0L & clust[[1]]+length(clust[[2]]) <= ncells(x))
-        }
-    }
-
-    invisible(NULL)
-}
-
 .pull_out_data <- function(x)
 # Pulling out data so we don't have to rely on ncdfFlowSet input.
 {
@@ -95,24 +62,6 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
         stop("'cell.data' must be a list or ncdfFlowSet object") 
     }
     return(list(samples=sample.names, markers=marker.names, exprs=expr.val))
-}
-
-.chosen_markers <- function(chosen.markers, all.markers) 
-# Identifying the markers that were chosen for use.
-{
-    if (!is.null(chosen.markers)) {
-        used <- logical(length(all.markers))
-        if (is.character(chosen.markers)) {
-            chosen.markers <- match(chosen.markers, all.markers)
-            if (any(is.na(chosen.markers))) {
-                stop("specified 'markers' not in available set of markers")
-            }
-        }
-        used[chosen.markers] <- TRUE
-    } else {
-        used <- rep(TRUE, length(all.markers))
-    }
-    return(used)
 }
 
 .reorganize_cells <- function(exprs, sample.id, cell.id, used=NULL, ...) 
@@ -162,16 +111,8 @@ prepareCellData <- function(x, naive=FALSE, markers=NULL, ...)
         accumulated <- accumulated + length(o)
     }
    
-    # Filling unused marker columns with NAs, as nrows must be equal to number of markers.
-    if (!all(used)) { 
-        clust.centers <- matrix(NA_real_, nrow(out$centers), ncol(exprs))
-        clust.centers[,used] <- out$centers
-    } else {
-        clust.centers <- out$centers
-    }
-
     return(list(exprs=do.call(cbind, new.exprs), 
-                metadata=list(cluster.centers=t(clust.centers), cluster.info=clust.info),
+                metadata=list(cluster.centers=t(out$centers), cluster.info=clust.info),
                 sample.id=unlist(new.samples),
                 cell.id=unlist(new.cells)))
 } 

@@ -7,13 +7,10 @@
  * original hypersphere.
  */
 
-SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SEXP assignments) try {
-    finder fx(exprs, use_markers, R_NilValue, R_NilValue);
-    const matrix_info& EXPRS=fx.searcher->exprs;
+SEXP recount_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP assignments) try {
+    const matrix_info& EXPRS=check_matrix(exprs);
     const size_t& nmarkers=EXPRS.nrow;
     const double* eptr=EXPRS.dptr;
-    const std::deque<size_t>& used_markers=fx.searcher->get_used_markers();
-    const size_t& nused=used_markers.size();
 
     // Get centers and assignments for each hypersphere.
     if (!isInteger(centers)) {
@@ -29,7 +26,7 @@ SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SE
     }
     
     if (!isReal(distance)|| LENGTH(distance)!=1) { throw std::runtime_error("distance must be a double-precision scalar"); }
-    const double threshold=asReal(distance);
+    const double threshold2=asReal(distance) * asReal(distance);
 
     // Setting up output objects.
     SEXP output=PROTECT(allocVector(VECSXP, 2));
@@ -41,40 +38,30 @@ SEXP recount_cells(SEXP exprs, SEXP use_markers, SEXP distance, SEXP centers, SE
 
         // Going through all centers and finding all cells that belong in the new space.
         std::deque<std::deque<int> > new_assignments(ncenters);
-        SEXP curass;
-        const int* iptr=NULL;
-        int ndex;
-        size_t ix;
         std::deque<int> temp, packed;
         
-        size_t u;
-        double dist, tmpdist;
-        const double* centerpoint, *curpoint;
-
         for (int c=0; c<ncenters; ++c) { 
-            curass=VECTOR_ELT(assignments, c);
+            SEXP curass=VECTOR_ELT(assignments, c);
             if (!isInteger(curass)) { 
                 throw std::runtime_error("assignment vectors should be integer");
             }
-            iptr=INTEGER(curass);
-            ndex=LENGTH(curass);
+            const int* iptr=INTEGER(curass);
+            const int ndex=LENGTH(curass);
             unpack_index_vector(temp, iptr, iptr+ndex);
             
             std::deque<int>& retained=new_assignments[c];
-            centerpoint=eptr+nmarkers*(cptr[c]);
-            for (ix=0; ix<temp.size(); ++ix) {
+            const double* centerpoint=eptr+nmarkers*(cptr[c]);
+            for (size_t ix=0; ix<temp.size(); ++ix) {
                 int& curt=temp[ix];
                 --curt; // become zero-indexed.
                 
-                curpoint=eptr+nmarkers*curt;
-                dist=0;
-                for (u=0; u<nused; ++u) {
-                    const size_t& m=used_markers[u];
+                const double* curpoint=eptr+nmarkers*curt;
+                double dist2=0, tmpdist;
+                for (size_t m=0; m<nmarkers; ++m) {
                     tmpdist=centerpoint[m] - curpoint[m];
-                    dist+=tmpdist*tmpdist;
+                    dist2+=tmpdist*tmpdist;
                 }
-                dist=std::sqrt(dist);
-                if (dist <= threshold) { retained.push_back(curt); }
+                if (dist2 <= threshold2) { retained.push_back(curt); }
             }
 
             // Storing the output.

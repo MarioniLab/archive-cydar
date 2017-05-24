@@ -1,9 +1,9 @@
 #include "objects.h"
 #include "packer.h"
 
-SEXP count_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP cluster_info, SEXP curcells, SEXP curmarks) try {
-    finder fx(exprs, curmarks, centers, cluster_info);
-    std::deque<size_t>& collected=(fx.searcher->neighbors);
+SEXP count_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP cluster_info, SEXP curcells) try {
+    auto searcher=generate_holder(exprs, centers, cluster_info);
+    std::deque<size_t>& collected=searcher->neighbors;
 
     // Checking distances and chosen cells.
     if (!isReal(distance)|| LENGTH(distance)!=1) { throw std::runtime_error("distance must be a double-precision scalar"); }
@@ -12,8 +12,8 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP cluster_info, SEX
         throw std::runtime_error("chosen indices should be an integer vector");
     }
     const int N=LENGTH(curcells);
-    const int ncells=fx.searcher->get_ncells();
-    const size_t& nmarkers=fx.searcher->get_nmarkers();
+    const int ncells=searcher->get_ncells();
+    const size_t& nmarkers=searcher->get_nmarkers();
     if (nmarkers==0) {
         throw std::runtime_error("number of markers should be positive");
     }
@@ -36,7 +36,7 @@ SEXP count_cells(SEXP exprs, SEXP distance, SEXP centers, SEXP cluster_info, SEX
                 throw std::runtime_error("chosen indices out of range");
             }
 
-            fx.searcher->find_neighbors(current_cell, threshold, false);
+            searcher->find_neighbors(current_cell, threshold, false);
             if (collected.size()==0) {
                 // Check here, otherwise median calculations fail.
                 throw std::runtime_error("cell failed to count itself");

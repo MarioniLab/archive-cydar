@@ -16,9 +16,9 @@ expandRadius <- function(x, design=NULL, markers=NULL, tol=0.5)
     used <- .chosen_markers(markers, markernames(x))
 
     # Computing mean intensities for all (used) markers in all samples.
-    nmarkers <- ncol(x)
-    all.means <- vector("list", nmarkers)
-    for (s in seq_len(nmarkers)) { 
+    nsamples <- ncol(x)
+    all.means <- vector("list", nsamples)
+    for (s in seq_len(nsamples)) { 
         all.means[[s]] <- rowMeans(ci[,sample.id==s])[used]
     }
     all.means <- do.call(rbind, all.means)

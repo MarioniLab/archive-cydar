@@ -1,18 +1,11 @@
 #include "cydar.h"
 #include "utils.h"
 
-matrix_info::matrix_info (int nr, int nc, bool ii) : nrow(nr), ncol(nc), is_integer(ii), iptr(NULL), dptr(NULL) {}
+matrix_info::matrix_info (int nr, int nc, const double* ptr) : nrow(nr), ncol(nc), dptr(ptr) {}
 
 matrix_info check_matrix(SEXP matrix) {
-    int type;
-    if (isReal(matrix)) {
-        type=0;
-    } else if (isInteger(matrix)) {
-        type=1;
-    } else if (isLogical(matrix)) { 
-        type=2;
-    } else {
-        throw std::runtime_error("matrix must be integer or double-precision");
+    if (!isReal(matrix)) {
+        throw std::runtime_error("matrix must be double-precision");
     }
 
     SEXP dims=getAttrib(matrix, R_DimSymbol);
@@ -24,19 +17,7 @@ matrix_info check_matrix(SEXP matrix) {
         throw std::runtime_error("recorded dimensions of the matrix are not consistent with its length"); 
     }
 
-    matrix_info output(nrow, ncol, type>0);
-    switch (type) {
-        case 0:
-            output.dptr=REAL(matrix);
-            break;
-        case 1:
-            output.iptr=INTEGER(matrix);
-            break;
-        case 2:
-            output.iptr=LOGICAL(matrix);
-            break;
-    }
-
+    matrix_info output(nrow, ncol, REAL(matrix));
     return output;
 }
 

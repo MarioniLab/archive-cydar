@@ -4,15 +4,15 @@ medIntensities <- function(x, markers)
 #
 # written by Aaron Lun
 # created 2 December 2016
-# last modified 3 December 2016
+# last modified 24 May 2017 
 {
     .check_cell_data(x, check.clusters=FALSE)
     samples <- colnames(x)
     used <- .chosen_markers(markers, markernames(x))
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
 
-    ci <- cellIntensities(x)
-    out <- .Call(cxx_compute_median_int, ci, length(samples), sample.id, cellAssignments(x), used)
+    ci <- .get_used_intensities(x, used)
+    out <- .Call(cxx_compute_median_int, ci, length(samples), sample.id, cellAssignments(x))
     if (is.character(out)) stop(out)
     
     used.markers <- markernames(x)[used]

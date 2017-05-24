@@ -4,10 +4,8 @@
 // Check matrix inputs.
 
 struct matrix_info {
-    matrix_info(int, int, bool);
+    matrix_info(int, int, const double*);
     const size_t nrow, ncol;
-    const bool is_integer;
-    const int* iptr;
     const double* dptr;
 };
 

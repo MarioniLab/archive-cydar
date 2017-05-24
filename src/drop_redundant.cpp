@@ -1,9 +1,9 @@
 #include "objects.h"
 
 SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_info, SEXP threshold) try {
-    finder fx(coords, R_NilValue, centers, clust_info);
-    const size_t nhyper=fx.searcher -> get_ncells();
-    const size_t nmarkers=fx.searcher -> get_nmarkers();
+    auto searcher=generate_holder(coords, centers, clust_info);
+    const size_t nhyper=searcher->get_ncells();
+    const size_t nmarkers=searcher->get_nmarkers();
 
     if (!isReal(threshold) || LENGTH(threshold)!=1) { 
         throw std::runtime_error("threshold must be a double-precision scalar"); 
@@ -23,12 +23,10 @@ SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_in
     try {
         int* optr=LOGICAL(output);
         std::fill(optr, optr+nhyper, 0);
-        std::deque<size_t>& neighbors=fx.searcher->neighbors;
+        std::deque<size_t>& neighbors=searcher->neighbors;
         std::deque<bool> already_seen(nhyper, false);
 
-        size_t ni, mi;
-        bool okay;
-        const double* dptr=(fx.searcher -> exprs).dptr, *dptr_current=NULL, *dptr_target=NULL;
+        const double* dptr=(searcher->exprs).dptr;
         if (dptr==NULL) {
             throw std::runtime_error("intensities must be double-precision");
         }
@@ -37,13 +35,13 @@ SEXP drop_redundant (SEXP actual_order, SEXP coords, SEXP centers, SEXP clust_in
             const int& actual_index=ordering[h];
             if (already_seen[actual_index]) { continue; }
             optr[actual_index]=1;
-            fx.searcher->find_neighbors(actual_index, radius, false);
-            dptr_current=dptr + actual_index*nmarkers;
+            searcher->find_neighbors(actual_index, radius, false);
+            const double* dptr_current=dptr + actual_index*nmarkers;
 
-            for (ni=0; ni<neighbors.size(); ++ni) {
-                okay=false;
-                dptr_target=dptr + neighbors[ni] * nmarkers;
-                for (mi=0; mi<nmarkers; ++mi) {
+            for (size_t ni=0; ni<neighbors.size(); ++ni) {
+                bool okay=false;
+                const double* dptr_target=dptr + neighbors[ni] * nmarkers;
+                for (size_t mi=0; mi<nmarkers; ++mi) {
                     if (std::abs(dptr_target[mi] - dptr_current[mi]) > thresh) {
                         okay=true;
                         break;

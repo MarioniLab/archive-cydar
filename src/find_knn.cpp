@@ -8,8 +8,8 @@ SEXP find_knn(SEXP cells, SEXP clust_centers, SEXP clust_info, SEXP nn, SEXP mod
     if (NN<1) { 
         throw std::runtime_error("number of nearest neighbors must be positive");
     }
-    finder fx(cells, R_NilValue, clust_centers, clust_info);
-    const size_t nmarkers=fx.searcher->get_nmarkers();
+    auto searcher=generate_holder(cells, clust_centers, clust_info);
+    const size_t nmarkers=searcher->get_nmarkers();
 
     // Just iterating across itself, if there are no query cells.
     const bool self_cycle=(query==R_NilValue);
@@ -17,7 +17,7 @@ SEXP find_knn(SEXP cells, SEXP clust_centers, SEXP clust_info, SEXP nn, SEXP mod
     size_t ncells;
     if (self_cycle) { 
         query=cells; 
-        ncells=fx.searcher->get_ncells();
+        ncells=searcher->get_ncells();
     } else {
         matrix_info qcells=check_matrix(query);
         if (qcells.dptr==NULL) {
@@ -65,15 +65,15 @@ SEXP find_knn(SEXP cells, SEXP clust_centers, SEXP clust_info, SEXP nn, SEXP mod
         }
         
         // Iterating across cells, finding NNs and storing (last) distances or neighbors.
-        std::deque<double>& distances=fx.searcher->distances;
-        std::deque<size_t>& neighbors=fx.searcher->neighbors;
+        std::deque<double>& distances=searcher->distances;
+        std::deque<size_t>& neighbors=searcher->neighbors;
         std::deque<size_t>::const_iterator nIt;
         
         for (size_t h=0; h<ncells; ++h) {
             if (self_cycle) { 
-                fx.searcher->find_nearest_neighbors(h, NN, store_distances); 
+                searcher->find_nearest_neighbors(h, NN, store_distances); 
             } else {
-                fx.searcher->find_nearest_neighbors(qptr, NN, store_distances); 
+                searcher->find_nearest_neighbors(qptr, NN, store_distances); 
                 qptr+=nmarkers;
             }
 

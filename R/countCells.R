@@ -4,9 +4,11 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
 #
 # written by Aaron Lun
 # created 21 April 2016
-# last modified 21 March 2017
+# last modified 24 May 2017
 {
+    on.exit({gc()}) # Getting rid of the temporary objects.
     .check_cell_data(x, check.clusters=!naive)
+
     sample.id <- cellData(x)$sample.id - 1L # Get to zero indexing.
     cell.id <- cellData(x)$cell.id - 1L
     if (naive) {
@@ -20,8 +22,8 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     # Scaling the distance by the number of used markers. 
     all.markers <- markernames(x)
     used <- .chosen_markers(markerData(x)$used, all.markers)
-    nmarkers <- sum(used)
-    distance <- tol * sqrt(nmarkers) 
+    nused <- sum(used)
+    distance <- tol * sqrt(nused) 
     if (distance <= 0) {
         warning("setting a non-positive distance to a small offset")
         distance <- 1e-8        
@@ -35,8 +37,8 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     allocations <- split(chosen, core.assign)
 
     # Parallel analysis.
-    ci <- cellIntensities(x)
-    out <- bplapply(allocations, FUN=.recount_cells, exprs=ci, markers=used, distance=distance, 
+    ci <- .get_used_intensities(x, used)
+    out <- bplapply(allocations, FUN=.count_cells, exprs=ci, distance=distance, 
                     cluster.centers=cluster.centers, cluster.info=cluster.info, filter=filter, 
                     BPPARAM=BPPARAM)
     
@@ -53,11 +55,12 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     names(out.index) <- NULL
 
     # Computing the associated statistics.
-    out.stats <- .Call(cxx_compute_hyperstats, ci, length(samples), sample.id, out.cells, used)
+    out.stats <- .Call(cxx_compute_hyperstats, ci, length(samples), sample.id, out.cells)
     if (is.character(out.stats)) stop(out.stats)
     out.counts <- out.stats[[1]]
     colnames(out.counts) <- samples
-    out.coords <- out.stats[[2]]
+    out.coords <- matrix(NA_real_, length(out.cells), nmarkers(x))
+    out.coords[,used] <- out.stats[[2]]
     colnames(out.coords) <- all.markers
 
     # Ordering them (not strictly necessary, just for historical reasons).
@@ -78,10 +81,10 @@ countCells <- function(x, tol=0.5, BPPARAM=SerialParam(), downsample=10, filter=
     return(output)
 }
 
-.recount_cells <- function(exprs, distance, cluster.centers, cluster.info, curcells, markers, filter) 
+.count_cells <- function(exprs, distance, cluster.centers, cluster.info, curcells, filter) 
 # Helper function so that BiocParallel call is self-contained.
 {
-    out <- .Call(cxx_count_cells, exprs, distance, cluster.centers, cluster.info, curcells, markers)
+    out <- .Call(cxx_count_cells, exprs, distance, cluster.centers, cluster.info, curcells)
     if (!is.character(out)) { 
         cells <- out[[1]]
         keep <- out[[2]] >= filter
