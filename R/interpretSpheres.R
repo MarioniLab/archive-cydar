@@ -80,7 +80,7 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
                 width=4
             ),
             column( 
-                actionButton("finish", "Save to R"),
+                actionButton("finish", "Save to R", style="width:120%; line-height: 50px; background-color: #FA8072"),
                 width=2
             )
         )
@@ -221,7 +221,10 @@ interpretSpheres <- function(x, markers=NULL, labels=NULL, select=NULL,
             output$lablegend <- renderUI({
                 cols <- .obtainColours(input$labeltouse)
                 as.rgb <- col2rgb(cols)
-                stuff <- sprintf('<span style="color:rgb(%i, %i, %i)">%s</span><br />', as.rgb[1,], as.rgb[2,], as.rgb[3,], names(cols))
+                leg.box <- sprintf('<div style="display:inline-block; background:rgb(%i, %i, %i); margin-right:5px; width:10px; height:10px"></div>', 
+                                   as.rgb[1,], as.rgb[2,], as.rgb[3,]) 
+                leg.names <- sprintf('<span>%s</span><br />', names(cols))
+                stuff <- paste(paste0(leg.box, leg.names), collapse="")
                 HTML(stuff)
             })
         }
