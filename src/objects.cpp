@@ -56,9 +56,9 @@ void naive_holder::find_nearest_neighbors (const double* current, size_t nn, con
 }
 
 double naive_holder::compute_marker_sqdist(const double* x, const double* y) const {
-    double tmp, out=0;
+    double out=0;
     for (size_t m=0; m<exprs.nrow; ++m) {
-        tmp=x[m]-y[m];
+        double tmp=x[m]-y[m];
         out+=tmp*tmp;
     }
     return out;
@@ -156,14 +156,19 @@ void convex_holder::search_all (const double* current, double threshold, const b
         const double& maxdist=cur_dist[cur_ncells-1];
         if (threshold + maxdist < dist2center) { continue; }
 
-        // Cells within this cluster are potentially countable; jumping to the first countable cell.
+        /* Cells within this cluster are potentially countable; jumping to the first countable cell,
+         * according to the triangle inequality. We could also define the last countable cell by the 
+         * reverse triangle inequality, but the clusters are too compact for that to come into play.
+         */
         const double lower_bd=dist2center-threshold;
-        int index=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd) - cur_dist;
-//        upper_bd=dist2center + threshold; // Doesn't help much.
+        const int firstcell=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd) - cur_dist;
+//        const double upper_bd=dist2center + threshold;
+//        const int lastcell=std::upper_bound(cur_dist + firstcell, cur_dist + cur_ncells, upper_bd) - cur_dist;
+        
         const int& cur_start=clust_start[center];
-        const double* other=exprs.dptr + nmarkers * (cur_start + index);
+        const double* other=exprs.dptr + nmarkers * (cur_start + firstcell);
+        for (int index=firstcell; index<cur_ncells; ++index, other+=nmarkers) {
 
-        for (; index<cur_ncells; ++index, other+=nmarkers) {
             const double dist2cell2=compute_marker_sqdist(current, other);
             if (dist2cell2 <= threshold2) {
                 neighbors.push_back(cur_start + index);
@@ -206,23 +211,26 @@ void convex_holder::search_nn(const double* current, size_t nn, const bool dist)
         const double* cur_dist=clust_dist[center];
         const double& maxdist=cur_dist[cur_ncells-1];
 
-        int index;
+        int firstcell=0;
+//        double upper_bd=R_PosInf;
         if (R_FINITE(threshold2)) {
             const double threshold = std::sqrt(threshold2);
             if (threshold + maxdist < dist2center) { continue; }
+
             // Cells within this cluster are potentially countable; proceeding to count them
             const double lower_bd=dist2center - threshold;
-            index=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd)-cur_dist;
-//          upper_bd=dist2center + threshold; // Doesn't help much.
-        } else {
-            index=0;
+            firstcell=std::lower_bound(cur_dist, cur_dist + cur_ncells, lower_bd)-cur_dist;
+//            upper_bd = threshold + dist2center;
         }
-        const int& cur_start=clust_start[center];
-        const double* other=exprs.dptr + nmarkers * (cur_start + index);
 
-        for (; index<cur_ncells; ++index, other+=nmarkers) {
-            const double dist2cell2=compute_marker_sqdist(current, other);
-                    
+        const int& cur_start=clust_start[center];
+        const double* other=exprs.dptr + nmarkers * (cur_start + firstcell);
+        for (int index=firstcell; index<cur_ncells; ++index, other+=nmarkers) {
+//            if (cur_dist[index] > upper_bd) { 
+//                break; 
+//            }
+
+            const double dist2cell2=compute_marker_sqdist(current, other);                   
             if (current_nearest.size() < nn || dist2cell2 <= threshold2) {
                 current_nearest.push(std::make_pair(dist2cell2, cur_start + index));
                 if (current_nearest.size() > nn) { 
@@ -230,6 +238,7 @@ void convex_holder::search_nn(const double* current, size_t nn, const bool dist)
                 } 
                 if (current_nearest.size()==nn) {
                     threshold2=current_nearest.top().first; // Shrinking the threshold, if an earlier NN has been found.
+//                    upper_bd=std::sqrt(threshold2) + dist2center;
                 } 
             }
         }
